@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          name: ideafast/cos-analysis
+          repository: ideafast/cos-analysis
           ref: dev
           token: ${{secrets.FOREIGN_GITHUB_TOKEN}}
       - uses: actions/setup-python@v5
