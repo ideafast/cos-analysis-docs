@@ -12,7 +12,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           name: ideafast/cos-analysis
-          ref: refs/heads/dev
+          ref: dev
+          token: ${{secrets.FOREIGN_GITHUB_TOKEN}}
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
