@@ -1,0 +1,12 @@
+COS-analysis Documentation
+==========================
+
+Welcome to **COS-analysis** documentation. 
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Table of contents:
+
+   README
+   DEMO
+   cosanalysis

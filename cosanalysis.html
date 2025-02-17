@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Useful functions &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Demonstration" href="DEMO.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEMO.html">Demonstration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Useful functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#read-device-data">Read device data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#read-device-dataset">read_device_dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#read-diary">Read diary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#load-diaries">load_diaries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-timings">get_timings</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#read-ucam-data">Read UCAM data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#get-demographics">get_demographics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-tup-pros">get_tup_PROs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-baseline-pros">get_baseline_PROs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-disease-score">get_disease_score</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#aggregate-and-combine-data-for-analysis">Aggregate and combine data for analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#build-analysis-dataset">build_analysis_dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-dataset-on-timings">build_dataset_on_timings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-dataset-on-frequency">build_dataset_on_frequency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#processing">processing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#upload-a-model-and-run-inferences">Upload a model and run inferences</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#upload-model">upload_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-inference-on-analysis-set">run_inference_on_analysis_set</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compute-rmse">compute_rmse</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#cosanalysis-package-all-functions">cosanalysis package - all functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dataset-manager">dataset_manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#device-data-manager">device_data_manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diaries-manager">diaries_manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#utils">utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adam-dataset">adam_dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#model-manager">model_manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">model_manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#model-utils">model_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-metrics">performance_metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#aggregation">aggregation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#aggregation-utils">aggregation_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset-builder">dataset_builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing">preprocessing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#model-upload-requirements">Model upload requirements</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Useful functions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cosanalysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="useful-functions">
+<h1>Useful functions<a class="headerlink" href="#useful-functions" title="Link to this heading"></a></h1>
+<section id="read-device-data">
+<h2>Read device data<a class="headerlink" href="#read-device-data" title="Link to this heading"></a></h2>
+<section id="read-device-dataset">
+<h3>read_device_dataset<a class="headerlink" href="#read-device-dataset" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="read-diary">
+<h2>Read diary<a class="headerlink" href="#read-diary" title="Link to this heading"></a></h2>
+<section id="load-diaries">
+<h3>load_diaries<a class="headerlink" href="#load-diaries" title="Link to this heading"></a></h3>
+</section>
+<section id="get-timings">
+<h3>get_timings<a class="headerlink" href="#get-timings" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="read-ucam-data">
+<h2>Read UCAM data<a class="headerlink" href="#read-ucam-data" title="Link to this heading"></a></h2>
+<section id="get-demographics">
+<h3>get_demographics<a class="headerlink" href="#get-demographics" title="Link to this heading"></a></h3>
+</section>
+<section id="get-tup-pros">
+<h3>get_tup_PROs<a class="headerlink" href="#get-tup-pros" title="Link to this heading"></a></h3>
+</section>
+<section id="get-baseline-pros">
+<h3>get_baseline_PROs<a class="headerlink" href="#get-baseline-pros" title="Link to this heading"></a></h3>
+</section>
+<section id="get-disease-score">
+<h3>get_disease_score<a class="headerlink" href="#get-disease-score" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="aggregate-and-combine-data-for-analysis">
+<h2>Aggregate and combine data for analysis<a class="headerlink" href="#aggregate-and-combine-data-for-analysis" title="Link to this heading"></a></h2>
+<section id="build-analysis-dataset">
+<h3>build_analysis_dataset<a class="headerlink" href="#build-analysis-dataset" title="Link to this heading"></a></h3>
+</section>
+<section id="build-dataset-on-timings">
+<h3>build_dataset_on_timings<a class="headerlink" href="#build-dataset-on-timings" title="Link to this heading"></a></h3>
+</section>
+<section id="build-dataset-on-frequency">
+<h3>build_dataset_on_frequency<a class="headerlink" href="#build-dataset-on-frequency" title="Link to this heading"></a></h3>
+</section>
+<section id="processing">
+<h3>processing<a class="headerlink" href="#processing" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="upload-a-model-and-run-inferences">
+<h2>Upload a model and run inferences<a class="headerlink" href="#upload-a-model-and-run-inferences" title="Link to this heading"></a></h2>
+<section id="upload-model">
+<h3>upload_model<a class="headerlink" href="#upload-model" title="Link to this heading"></a></h3>
+</section>
+<section id="run-inference-on-analysis-set">
+<h3>run_inference_on_analysis_set<a class="headerlink" href="#run-inference-on-analysis-set" title="Link to this heading"></a></h3>
+</section>
+<section id="compute-rmse">
+<h3>compute_rmse<a class="headerlink" href="#compute-rmse" title="Link to this heading"></a></h3>
+</section>
+</section>
+</section>
+<section id="cosanalysis-package-all-functions">
+<h1>cosanalysis package - all functions<a class="headerlink" href="#cosanalysis-package-all-functions" title="Link to this heading"></a></h1>
+<section id="dataset-manager">
+<h2>dataset_manager<a class="headerlink" href="#dataset-manager" title="Link to this heading"></a></h2>
+<section id="device-data-manager">
+<h3>device_data_manager<a class="headerlink" href="#device-data-manager" title="Link to this heading"></a></h3>
+</section>
+<section id="diaries-manager">
+<h3>diaries_manager<a class="headerlink" href="#diaries-manager" title="Link to this heading"></a></h3>
+</section>
+<section id="utils">
+<h3>utils<a class="headerlink" href="#utils" title="Link to this heading"></a></h3>
+</section>
+<section id="adam-dataset">
+<h3>adam_dataset<a class="headerlink" href="#adam-dataset" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="model-manager">
+<h2>model_manager<a class="headerlink" href="#model-manager" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>model_manager<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+</section>
+<section id="model-utils">
+<h3>model_utils<a class="headerlink" href="#model-utils" title="Link to this heading"></a></h3>
+</section>
+<section id="performance-metrics">
+<h3>performance_metrics<a class="headerlink" href="#performance-metrics" title="Link to this heading"></a></h3>
+</section>
+</section>
+<section id="aggregation">
+<h2>aggregation<a class="headerlink" href="#aggregation" title="Link to this heading"></a></h2>
+</section>
+<section id="aggregation-utils">
+<h2>aggregation_utils<a class="headerlink" href="#aggregation-utils" title="Link to this heading"></a></h2>
+</section>
+<section id="dataset-builder">
+<h2>dataset_builder<a class="headerlink" href="#dataset-builder" title="Link to this heading"></a></h2>
+</section>
+<section id="preprocessing">
+<h2>preprocessing<a class="headerlink" href="#preprocessing" title="Link to this heading"></a></h2>
+</section>
+</section>
+<section id="model-upload-requirements">
+<h1>Model upload requirements<a class="headerlink" href="#model-upload-requirements" title="Link to this heading"></a></h1>
+<p>To upload a model, call the <strong>upload_model</strong> function with the path to the model directory.</p>
+<p>This directory must meet the following requirements:</p>
+<ul class="simple">
+<li><p><strong>Required files</strong>: Ensure that both config.json and inference.py are present.</p></li>
+<li><p><strong>Model file</strong>: The directory must contain a model file named model.</p></li>
+<li><p><strong>Valid JSON</strong>: Check if the JSON file is correct and contains the right arguments  (see <a class="reference internal" href="json_format.html"><span class="doc">JSON Format</span></a>).</p></li>
+<li><p><strong>Inference Function</strong>: The inference.py file must define a run_inference function.</p></li>
+<li><p><strong>Function Parameters</strong>: Verify that run_inference has the following parameters : “subjs”, “version”, “directory_path” and “savepath” (optional).</p></li>
+<li><p><strong>No Unrelated Files</strong>:  The directory must not contain any image or CSV files.</p></li>
+<li><p><strong>Single Python File</strong>: There should be only one Python file in the directory.</p></li>
+</ul>
+<p>Before uploading, your model will be tested on a patient to ensure it runs correctly.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="DEMO.html" class="btn btn-neutral float-left" title="Demonstration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
