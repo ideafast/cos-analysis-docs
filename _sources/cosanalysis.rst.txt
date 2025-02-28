@@ -1,0 +1,196 @@
+Useful functions
+================
+
+Read device data
+----------------
+
+read_device_dataset
+~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.device_data_manager.read_device_dataset
+   :noindex:
+
+Read diary
+----------
+
+load_diaries
+~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.load_diaries
+   :noindex:
+
+format_diaries
+~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.format_diaries
+   :noindex:
+
+get_timings
+~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.get_timings
+   :noindex:
+
+Read UCAM data
+--------------
+
+get_demographics
+~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.get_demographics
+   :noindex:
+
+
+get_tup_PROs
+~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.get_tup_PROs
+   :noindex:
+
+get_baseline_PROs
+~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.get_baseline_PROs
+   :noindex:
+
+get_disease_score
+~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_manager.diaries_manager.get_disease_score
+   :noindex:
+
+Aggregate and combine data for analysis
+---------------------------------------
+
+build_analysis_dataset
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_builder.build_analysis_dataset
+   :noindex:
+
+build_dataset_on_timings
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_builder.build_dataset_on_timings
+   :noindex:
+
+build_dataset_on_frequency
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.dataset_builder.build_dataset_on_frequency
+   :noindex:
+
+processing
+~~~~~~~~~~
+
+.. autofunction:: cosanalysis.preprocessing.processing
+   :noindex:
+
+Upload a model and run inferences
+---------------------------------
+
+upload_model
+~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.model_manager.model_manager.upload_model
+   :noindex:
+
+run_inference_on_analysis_set
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.model_manager.model_manager.run_inference_on_analysis_set
+   :noindex:
+
+compute_rmse
+~~~~~~~~~~~~
+
+.. autofunction:: cosanalysis.model_manager.performance_metrics.compute_rmse
+   :noindex:
+
+cosanalysis package - all functions
+===================================
+
+dataset_manager
+----------------
+
+device_data_manager
+~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.dataset_manager.device_data_manager
+   :members:
+   :undoc-members:
+
+diaries_manager
+~~~~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.dataset_manager.diaries_manager
+   :members:
+   :undoc-members:
+
+utils
+~~~~~
+
+.. automodule:: cosanalysis.dataset_manager.utils
+   :members:
+   :undoc-members:
+
+adam_dataset
+~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.dataset_manager.adam_dataset
+   :members:
+   :undoc-members:
+
+model_manager
+--------------
+
+model_manager
+~~~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.model_manager.model_manager
+   :members:
+   :undoc-members:
+
+model_utils
+~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.model_manager.model_utils
+   :members:
+   :undoc-members:
+
+performance_metrics
+~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: cosanalysis.model_manager.performance_metrics
+   :members:
+   :undoc-members:
+
+
+aggregation
+-----------
+
+.. automodule:: cosanalysis.aggregation
+   :members:
+   :undoc-members:
+
+aggregation_utils
+-----------------
+
+.. automodule:: cosanalysis.aggregation_utils
+   :members:
+   :undoc-members:
+
+
+dataset_builder
+---------------
+
+.. automodule:: cosanalysis.dataset_builder
+   :members:
+   :undoc-members:
+
+preprocessing
+-------------
+
+.. automodule:: cosanalysis.preprocessing
+   :members:
+   :undoc-members:

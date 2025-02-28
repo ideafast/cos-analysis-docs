@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.model_manager.model_manager &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.model_manager.model_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.model_manager.model_manager</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">dmpy</span> <span class="kn">import</span> <span class="n">upload_data</span><span class="p">,</span> <span class="n">list_files</span><span class="p">,</span> <span class="n">get_file_content</span>
+
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">study_id</span>
+<span class="kn">from</span> <span class="nn">.model_utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">check_files</span><span class="p">,</span>
+    <span class="n">check_used_function</span><span class="p">,</span>
+    <span class="n">test_run_inference</span><span class="p">,</span>
+    <span class="n">parse_json</span><span class="p">,</span>
+    <span class="n">run_inference</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..dataset_manager.diaries_manager</span> <span class="kn">import</span> <span class="n">read_adam_dataset</span>
+
+
+<div class="viewcode-block" id="upload_model">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.model_manager.model_manager.upload_model">[docs]</a>
+<span class="k">def</span> <span class="nf">upload_model</span><span class="p">(</span><span class="n">directory_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload model to the DMP. This function also checks the validity of the folder before proceeding to the upload.</span>
+
+<span class="sd">    :param directory_path: Path to the folder with the model to upload.</span>
+<span class="sd">    :type directory_path: str</span>
+
+<span class="sd">    :return: True if the upload was a success.</span>
+<span class="sd">    :rtype: bool</span>
+
+<span class="sd">    :note:</span>
+<span class="sd">        - This function calls check_files, check_used_function and test_run_inference from model_utils to check if the folder is ready to be uploaded. If not, an error will be raised by those functions.</span>
+<span class="sd">        - The folder is compressed into a zip file. That zip file is the file that will be uploaded to the DMP.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check the folder</span>
+    <span class="n">check_files</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+    <span class="n">check_used_function</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+    <span class="n">test_run_inference</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+
+    <span class="c1"># 1- Compress a folder into a zip file</span>
+    <span class="n">zip_buffer</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_buffer</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zipf</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">directory_path</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+                <span class="n">arcname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">directory_path</span><span class="p">)</span>
+                <span class="n">zipf</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">arcname</span><span class="p">)</span>
+    <span class="n">zip_buffer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Reset buffer pointer to the beginning</span>
+
+    <span class="c1"># 2- Proceed to upload</span>
+    <span class="c1"># Get model type</span>
+    <span class="n">config_data</span> <span class="o">=</span> <span class="n">parse_json</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+
+    <span class="n">model_type</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;model_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;model_type&quot;</span><span class="p">]</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;training_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;data_version&quot;</span><span class="p">]</span>
+    <span class="n">cohorts</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;training_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;cohorts&quot;</span><span class="p">]</span>
+    <span class="n">prediction_window</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;dataset_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;window_size&quot;</span><span class="p">]</span>
+    <span class="n">device_types</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;dataset_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;device_types&quot;</span><span class="p">]</span>
+    <span class="n">prediction_label</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;prediction&quot;</span><span class="p">][</span><span class="s2">&quot;prediction_label&quot;</span><span class="p">]</span>
+    <span class="n">change_from_baseline</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;prediction&quot;</span><span class="p">][</span><span class="s2">&quot;change_from_baseline&quot;</span><span class="p">]</span>
+
+    <span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;model_</span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">prediction_label</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="p">)</span><span class="si">}</span><span class="s2">.zip&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">upload_data</span><span class="p">(</span>
+        <span class="n">study_id</span><span class="o">=</span><span class="n">study_id</span><span class="p">,</span>
+        <span class="n">field_id</span><span class="o">=</span><span class="s2">&quot;bi_model&quot;</span><span class="p">,</span>
+        <span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">,</span>
+        <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;prediction_label&quot;</span><span class="p">:</span> <span class="n">prediction_label</span><span class="p">,</span>
+            <span class="s2">&quot;prediction_change_from_baseline&quot;</span><span class="p">:</span> <span class="n">change_from_baseline</span><span class="p">,</span>
+            <span class="s2">&quot;prediction_window&quot;</span><span class="p">:</span> <span class="n">prediction_window</span><span class="p">,</span>
+            <span class="s2">&quot;model_type&quot;</span><span class="p">:</span> <span class="n">model_type</span><span class="p">,</span>
+            <span class="s2">&quot;training_cohorts&quot;</span><span class="p">:</span> <span class="n">cohorts</span><span class="p">,</span>
+            <span class="s2">&quot;training_version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+            <span class="s2">&quot;device_types&quot;</span><span class="p">:</span> <span class="n">device_types</span>
+        <span class="p">},</span>
+        <span class="n">file_content</span><span class="o">=</span><span class="n">zip_buffer</span><span class="p">,</span>  <span class="c1"># Upload the zip buffer</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The model was uploaded successfully!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="run_inference_on_analysis_set">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.model_manager.model_manager.run_inference_on_analysis_set">[docs]</a>
+<span class="k">def</span> <span class="nf">run_inference_on_analysis_set</span><span class="p">(</span>
+    <span class="n">model_id</span><span class="p">,</span>
+    <span class="n">version</span><span class="p">,</span>
+    <span class="n">model_path</span><span class="o">=</span><span class="s2">&quot;./models&quot;</span><span class="p">,</span>
+    <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+    <span class="n">savepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run inference on a chosen analysis set. For cohort specific models, we will only be able to test on participants of the specific cohort.</span>
+
+<span class="sd">    :param model_id: ID of the model on the DMP.</span>
+<span class="sd">    :type model_id: str</span>
+
+<span class="sd">    :param version: Version of the data to use.</span>
+<span class="sd">    :type version: str</span>
+
+<span class="sd">    :param model_path: Path to save the model folder to. Default is &quot;./models&quot; : model is stored in the folder models at the current path.</span>
+<span class="sd">    :type model_path: str, optional</span>
+
+<span class="sd">    :param cohorts: Cohorts to run inferences on. Default is None : we test on all cohorts (except if this is a cohort specific model).</span>
+<span class="sd">    :type cohorts: list of str</span>
+
+<span class="sd">    :param analysis_set: Analysis set to run inferences on. Either &#39;ias&#39; or &#39;eas&#39;. Default is &#39;ias&#39;</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param ias_dataset: Case where analysis_set = &#39;ias&#39;. Indicates whether to run inferences on train set, test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39;, &#39;all&#39;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param savepath: Path to save the predictions to. Default is None : the predictions dataset will not be saved.</span>
+<span class="sd">    :type savepath: str, optional</span>
+
+<span class="sd">    :return: DataFrame with the predictions corresponding to the analysis set in parameter.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :note: This function raises ValueError in case analysis_set or ias_dataset are not valid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">models_info</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">list_files</span><span class="p">(</span>
+        <span class="n">study_id</span><span class="p">,</span> <span class="n">kinds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bi_model&quot;</span><span class="p">],</span> <span class="n">version_id</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">models_info</span><span class="p">[</span><span class="n">models_info</span><span class="o">.</span><span class="n">fileId</span> <span class="o">==</span> <span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> not found.&quot;</span><span class="p">)</span>
+
+    <span class="n">file_info</span> <span class="o">=</span> <span class="n">models_info</span><span class="p">[</span><span class="n">models_info</span><span class="o">.</span><span class="n">fileId</span> <span class="o">==</span> <span class="n">model_id</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">file_name</span> <span class="o">=</span> <span class="n">file_info</span><span class="o">.</span><span class="n">fileName</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+
+    <span class="n">record_stream</span> <span class="o">=</span> <span class="n">get_file_content</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+    <span class="n">compressed_data</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">record_stream</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">compressed_data</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">zf</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;config.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">config_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="c1"># Define model saving path</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">extract_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+        <span class="n">zf</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">extract_path</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;prediction&quot;</span><span class="p">][</span><span class="s2">&quot;cohort_specific_model&quot;</span><span class="p">]:</span>  <span class="c1"># Bool</span>
+        <span class="n">allowed_cohorts</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">&quot;training_metadata&quot;</span><span class="p">][</span><span class="s2">&quot;cohorts&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">cohorts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cohorts</span> <span class="o">=</span> <span class="n">allowed_cohorts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cohorts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">cohort</span> <span class="k">for</span> <span class="n">cohort</span> <span class="ow">in</span> <span class="n">cohorts</span> <span class="k">if</span> <span class="n">cohort</span> <span class="ow">in</span> <span class="n">allowed_cohorts</span><span class="p">]</span>
+
+    <span class="c1"># Get the subjects from the identification set</span>
+    <span class="n">clinical_df</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span>
+                                    <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                    <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+                                    <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">)</span>
+
+    <span class="n">subjects</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">run_inference</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">extract_path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">savepath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">predictions</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">savepath</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">predictions</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

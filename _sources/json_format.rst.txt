@@ -1,0 +1,61 @@
+.. _json_format:
+
+JSON Format
+-----------
+
+Here is the expected format for `config.json`:
+
+.. code-block:: json
+
+    {
+        "training_metadata": { 
+            "cohorts": [], 
+            "data_version": "",
+            "supervised": false
+        },
+        "model_metadata": { 
+            "library": "",
+            "model_filename": "", 
+            "model_type": "",
+            "input_features": []
+        },
+        "dataset_metadata": { 
+            "window_size": "",
+            "window_length": 0,
+            "setting": "",
+            "device_types": [],
+            "imputation": false
+        },
+        "prediction": { 
+            "concept": "",
+            "prediction_label": "",
+            "change_from_baseline": false,
+            "cohort_specific_model": false
+        }
+    }
+
+**Requirements details:** 
+
+* training_metadata : Save metadata relevant to which data the training was done.
+    - *cohorts* : List of disease cohorts the model was trained on. Each must be one of "IBD", "HV", "PD", "HD", "PSS", "SLE", "RA". (list of str)
+    - *data_version* : Data version the model was trained on. (str)
+    - *supervised* : Supervised or unsupervised learning. (bool)
+
+* model_metadata
+    - *library* (str)
+    - *model_filename* : Model file (binary) saved from sklearn, pytorth, tensorflow, etc. (str)
+    - *model_type* (str)
+    - *input_features* : Features in the starting dataset. (list of str)
+
+* dataset_metadata : Save metadata relevant to build dataset before prediction.
+    - *window_size* : MAE, M, A, E or daily. (str)
+    - *window_length*: In hours. Only if window_size is MAE, M, A, E. (int, optional)
+    - *setting* : Before, around or after. Only if window_size is MAE, M, A, E. (str, optional)
+    - *device_types* : List of device types used. Each must be one of "SLP_night", "STS", "COG_pvt", "COG_dst", "MCR_MCR", "MCR_MCL", "HRV", "VIT", "GVA". (list of str)
+    - *imputation* (bool)
+
+* prediction : Save metadata relevant to understand the prediction.
+    - *concept* : F (fatigue), DS (daytime sleepiness) or SQ (sleep quality). (str)
+    - *prediction_label* : Question to predict. (str)
+    - *change_from_baseline* (bool)
+    - *cohort_specific_model* : True if the model is restricted to the training cohort and cannot be tested on others. (bool)

@@ -1,0 +1,692 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.dataset_manager.device_data_manager &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.dataset_manager.device_data_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.dataset_manager.device_data_manager</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span><span class="p">,</span> <span class="n">StringIO</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">dmpy</span> <span class="kn">import</span> <span class="n">get_file_content</span><span class="p">,</span> <span class="n">list_files</span>
+
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">study_id</span>
+<span class="kn">from</span> <span class="nn">.diaries_manager</span> <span class="kn">import</span> <span class="n">read_adam_dataset</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">add_tups</span><span class="p">,</span>
+    <span class="n">get_tup_dates</span><span class="p">,</span>
+    <span class="n">add_tup_day</span><span class="p">,</span>
+    <span class="n">check_cohorts</span><span class="p">,</span>
+    <span class="n">read_dataset</span><span class="p">,</span>
+    <span class="n">check_valid_device</span><span class="p">,</span>
+    <span class="n">check_valid_dataset</span><span class="p">,</span>
+    <span class="n">check_valid_ias_dataset</span><span class="p">,</span>
+    <span class="n">check_participants</span><span class="p">,</span>
+    <span class="n">upload_dataset</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="read_device_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.read_device_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">read_device_dataset</span><span class="p">(</span>
+    <span class="n">device_type</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+    <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+    <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads a pre-saved dataset, filtering by cohorts, participants and analysis set. The data of each participant is cleaned and concatenated.</span>
+
+<span class="sd">    :param device_type: The type of device. Must be one of &#39;SLP_night&#39;, &#39;STS&#39;, &#39;HRV&#39;, &#39;VIT&#39;, &#39;GVA&#39;, &#39;MCR_MCR&#39;, &#39;MCR_MCL&#39;, &#39;COG_dst&#39;, &#39;COG_pvt&#39;.</span>
+<span class="sd">    :type device_type: str</span>
+
+<span class="sd">    :param version: Specifies the version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: The analysis set to use (&#39;ias&#39; or &#39;eas&#39;). Default is &#39;ias&#39;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: A list of participant IDs to include in the dataset. Default is None, all participants for the dataset (ias or eas) are loaded.</span>
+<span class="sd">    :type participants: list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: Specifies the dataset of the identification set to load. Must be one of &#39;Train&#39;, &#39;Test&#39;, or &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: A list of cohorts to load. Default is None, all cohorts are loaded.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: A DataFrame containing the filtered dataset.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If no file corresponding to the given parameters is found.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cohorts</span> <span class="o">=</span> <span class="n">check_cohorts</span><span class="p">(</span><span class="n">cohorts</span><span class="p">)</span>
+    <span class="n">device_type</span> <span class="o">=</span> <span class="n">check_valid_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+    <span class="n">ias_dataset</span> <span class="o">=</span> <span class="n">check_valid_ias_dataset</span><span class="p">(</span><span class="n">ias_dataset</span><span class="p">)</span>
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">check_participants</span><span class="p">(</span><span class="n">participants</span><span class="p">)</span>
+
+    <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">read_dataset</span><span class="p">(</span>
+        <span class="n">device_type</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">imputation</span><span class="p">,</span> <span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="n">clinical_df</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span>
+                                    <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                    <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+                                    <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+                                    <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">)</span>
+    <span class="n">subjects</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+    <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">subjects</span><span class="p">)]</span>
+
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;mixed&quot;</span>
+    <span class="p">)</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;mixed&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="load_and_save_device_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.load_and_save_device_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">load_and_save_device_dataset</span><span class="p">(</span><span class="n">device_type</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upload</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads, concatenates, cleans, and optionally uploads a device dataset.</span>
+
+<span class="sd">    :param device_type: The type of device. Must be one of &#39;SLP_night&#39;, &#39;STS&#39;, &#39;HRV&#39;, &#39;VIT&#39;, &#39;GVA&#39;, &#39;MCR_MCR&#39;, &#39;MCR_MCL&#39;, &#39;COG_dst&#39;, &#39;COG_pvt&#39;.</span>
+<span class="sd">    :type device_type: str</span>
+
+<span class="sd">    :param version: Specifies the version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param upload: Whether to upload the cleaned dataset. Default is False.</span>
+<span class="sd">    :type upload: bool, optional</span>
+
+<span class="sd">    :param analysis_set: The analysis set to use (&#39;ias&#39; or &#39;eas&#39;). Default is &#39;ias&#39;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :return: A DataFrame containing the cleaned dataset, or None if no data is available after cleaning.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">device_type</span> <span class="o">=</span> <span class="n">check_valid_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;_&quot;</span> <span class="ow">in</span> <span class="n">device_type</span><span class="p">:</span>
+        <span class="n">device</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="n">device_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">device_type</span>
+
+    <span class="c1"># Read and concatenate device data</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="n">read_device_records</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                                  <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                  <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="c1"># Get the start and end dates of each patients tups</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">get_tup_dates</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="c1"># For AX6 device, keep only device worn on the back</span>
+    <span class="k">if</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;MCR_MCR&quot;</span><span class="p">,</span> <span class="s2">&quot;MCR_MCL&quot;</span><span class="p">,</span> <span class="s2">&quot;STS&quot;</span><span class="p">]:</span>
+        <span class="n">ax6_records</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">study_id</span><span class="p">,</span> <span class="n">kinds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;AX6&quot;</span><span class="p">])</span>
+        <span class="n">ax6_records</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ax6_records</span><span class="p">)</span>
+
+        <span class="n">ax6_back</span> <span class="o">=</span> <span class="n">ax6_records</span><span class="p">[</span>
+            <span class="n">ax6_records</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;location&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;back&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">records_back</span> <span class="o">=</span> <span class="n">ax6_back</span><span class="o">.</span><span class="n">fileName</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+        <span class="n">records</span><span class="p">[</span><span class="s2">&quot;ax6_filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">fileName</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;-AX6&quot;</span><span class="p">)</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="n">records</span><span class="p">[</span><span class="n">records</span><span class="o">.</span><span class="n">ax6_filename</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">records_back</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Create a progress bar for the main process</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2"> records&quot;</span><span class="p">)</span>
+    <span class="n">num_processes</span> <span class="o">=</span> <span class="mi">8</span>
+
+    <span class="k">def</span> <span class="nf">update_pbar</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
+        <span class="c1"># Callback function to update progress bar</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">num_processes</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="c1"># Use imap_unordered for potentially faster processing</span>
+        <span class="c1"># Apply_async with callback for immediate progress updates</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span>
+                <span class="n">read_record_wrapper</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">),</span>
+                <span class="n">callback</span><span class="o">=</span><span class="n">update_pbar</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s2">&quot;records&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="c1"># Get all results</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+
+    <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">all_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">all_data</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">all_data</span><span class="p">:</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">all_data</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No data to concatenate.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Convert timestamps to datetime</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="p">)</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span><span class="p">)</span>
+
+    <span class="c1"># device measures</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">col</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="n">col</span>
+        <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;device_id&quot;</span><span class="p">,</span> <span class="s2">&quot;start_timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;end_timestamp&quot;</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Ensure all datasets have a uniform column structure</span>
+    <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;GVA&quot;</span><span class="p">:</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">tup</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">tup</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="s2">&quot;Unscheduled Visit&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+        <span class="c1"># Remove rows with no data</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">gva_all_NumSteps_TOTAL</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Add the gva_ suffix to the length_recording_hours column</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;length_recording_hours&quot;</span><span class="p">:</span> <span class="s2">&quot;gva_length_recording_hours&quot;</span><span class="p">},</span>
+            <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;COG_dst&quot;</span><span class="p">,</span> <span class="s2">&quot;COG_pvt&quot;</span><span class="p">]:</span>
+        <span class="c1"># Ensure the cognition dst data falls within the evening hours</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;COG_dst&quot;</span><span class="p">:</span>
+            <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">17</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;=</span> <span class="mi">23</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="c1"># Ensure the cognition pvt data falls within the morning hours</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span>
+                <span class="p">(</span>
+                    <span class="p">(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">)</span>
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;=</span> <span class="mi">12</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Drop duplicates</span>
+        <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;Date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+            <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Date&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Date&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;STS&quot;</span><span class="p">:</span>
+        <span class="c1"># Drop duplicates</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+            <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;start_timestamp&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;MCR_MCR&quot;</span><span class="p">,</span> <span class="s2">&quot;MCR_MCL&quot;</span><span class="p">]:</span>
+        <span class="c1"># Replace NA values by nan</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;MCR_MCL&quot;</span><span class="p">:</span>
+            <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;mcl_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span>
+                <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;mcl_size&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;mcl_mi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span>
+                <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;mcl_mi&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="c1"># Filter when the device is not worn</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">mcr_class</span> <span class="o">!=</span> <span class="s2">&quot;not_worn&quot;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;HRV&quot;</span><span class="p">:</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;HR_5min&quot;</span><span class="p">:</span> <span class="s2">&quot;HRV_HR_5min&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;VIT&quot;</span><span class="p">:</span>
+        <span class="c1"># Remove rows where only RRI is not nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span>
+            <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">measures</span> <span class="k">if</span> <span class="s2">&quot;RRI&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">m</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;SLP_night&quot;</span><span class="p">:</span>
+        <span class="c1"># remove short records &lt;= 3h</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span> <span class="o">-</span>
+                                        <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="c1"># remove records with invalid dates</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[(</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span>
+            <span class="n">device_dataset</span><span class="o">.</span><span class="n">start_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">18</span><span class="p">)]</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;</span> <span class="mi">18</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span>
+        <span class="p">)</span>
+        <span class="c1"># remove duplicates</span>
+        <span class="n">device_dataset</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">end_timestamp</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> \
+            <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+            <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;start_timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;end_timestamp&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># remove outliers</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_HeartrateQ05_night</span> <span class="o">&lt;</span>
+                           <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;slp_HeartrateQ05_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_HeartrateQ50_night</span> <span class="o">&lt;</span>
+                           <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;slp_HeartrateQ50_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_HeartrateQ95_night</span> <span class="o">&lt;</span>
+                           <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;slp_HeartrateQ95_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_ResprateQ05_night</span> <span class="o">&lt;</span>
+                           <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;slp_ResprateQ05_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_ResprateQ50_night</span> <span class="o">&lt;</span>
+                           <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;slp_ResprateQ50_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">device_dataset</span><span class="o">.</span><span class="n">slp_ResprateQ95_night</span> <span class="o">&lt;</span>
+                           <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;slp_ResprateQ95_night&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;slp_SleepEfficiencyOrigin_night&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Remove NaN columns</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Replace infinite values by NaN</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Remove NaNs rows</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">measures</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="n">measures</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Sort the dataset</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;start_timestamp&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Drop duplicates</span>
+    <span class="c1"># device_dataset.drop_duplicates(keep=&quot;first&quot;, inplace=True)</span>
+    <span class="n">device_dataset</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;device_id&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;start_timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;end_timestamp&quot;</span><span class="p">],</span>
+        <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add tup day</span>
+    <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s2">&quot;SLP_night&quot;</span><span class="p">:</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">add_tup_day</span><span class="p">(</span>
+            <span class="n">device_dataset</span><span class="p">,</span>
+            <span class="n">tup_dates</span><span class="p">,</span>
+            <span class="n">time_header</span><span class="o">=</span><span class="s2">&quot;end_timestamp&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">device_dataset</span><span class="o">.</span><span class="n">tup_day</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">tup_day</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">add_tup_day</span><span class="p">(</span>
+            <span class="n">device_dataset</span><span class="p">,</span>
+            <span class="n">tup_dates</span><span class="p">,</span>
+            <span class="n">time_header</span><span class="o">=</span><span class="s2">&quot;start_timestamp&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Order columns</span>
+    <span class="n">first_columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;subject_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;device_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tup&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;start_timestamp&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;end_timestamp&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">first_columns</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">first_columns</span>
+    <span class="p">]</span>
+    <span class="n">device_dataset</span> <span class="o">=</span> <span class="n">device_dataset</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">upload</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">upload_dataset</span><span class="p">(</span><span class="n">device_dataset</span><span class="p">,</span>
+                                <span class="n">device_type</span><span class="p">,</span>
+                                <span class="n">version</span><span class="p">,</span>
+                                <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span>
+                                <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">device_dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="read_record_wrapper">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.read_record_wrapper">[docs]</a>
+<span class="k">def</span> <span class="nf">read_record_wrapper</span><span class="p">(</span><span class="n">row_dict</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper function to handle dictionary input for multiprocessing.</span>
+
+<span class="sd">    :param row_dict: A dictionary containing record information.</span>
+<span class="sd">    :type row_dict: dict</span>
+
+<span class="sd">    :param device_type: The type of device (e.g., &#39;SLP_night&#39;, &#39;STS&#39;, etc.).</span>
+<span class="sd">    :type device_type: str</span>
+
+<span class="sd">    :param tup_dates: DataFrame containing Tup dates for the records.</span>
+<span class="sd">    :type tup_dates: pd.DataFrame</span>
+
+<span class="sd">    :return: Data read from the archive matching the specified parameters.</span>
+<span class="sd">    :rtype: pd.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">read_record</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">row_dict</span><span class="p">),</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_device_records">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.read_device_records">[docs]</a>
+<span class="k">def</span> <span class="nf">read_device_records</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">analysis_set</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves records with the digital measures of a specific device.</span>
+
+<span class="sd">    :param device: The type of device. Must be one of &#39;SLP&#39;, &#39;STS&#39;, &#39;HRV&#39;, &#39;VIT&#39;, &#39;GVA&#39;, &#39;MCR&#39;, &#39;COG&#39;.</span>
+<span class="sd">    :type device: str</span>
+
+<span class="sd">    :param version: The version of the data to retrieve.</span>
+<span class="sd">    :type version: str</span>
+
+<span class="sd">    :param analysis_set: The analysis set to use (&#39;ias&#39; or &#39;eas&#39;)</span>
+<span class="sd">    :type analysis_set: str</span>
+
+<span class="sd">    :return: A DataFrame containing the device records.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">clinical_df</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span>
+                                    <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span>
+        <span class="n">study_id</span><span class="p">,</span>
+        <span class="n">kinds</span><span class="o">=</span><span class="p">[</span><span class="n">device</span><span class="p">],</span>
+        <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+        <span class="n">version_id</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">files</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;participantId&quot;</span><span class="p">:</span> <span class="s2">&quot;USUBJID&quot;</span><span class="p">})</span>
+
+    <span class="n">records</span><span class="o">.</span><span class="n">timeStart</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">records</span><span class="o">.</span><span class="n">timeStart</span><span class="p">)</span>
+    <span class="n">records</span><span class="o">.</span><span class="n">timeEnd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">records</span><span class="o">.</span><span class="n">timeEnd</span><span class="p">)</span>
+    <span class="n">records</span><span class="o">.</span><span class="n">fileSize</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">fileSize</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">records</span><span class="p">[</span><span class="s2">&quot;log_fileSize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="s2">&quot;fileSize&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">()</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;timeStart&quot;</span><span class="p">,</span> <span class="s2">&quot;fileSize&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># remove duplicated records (tolerance of 2 days in timestart)</span>
+    <span class="n">records</span><span class="p">[</span><span class="s2">&quot;group_id_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">])[</span><span class="s2">&quot;timeStart&quot;</span><span class="p">]</span>\
+        <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span>\
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">records</span><span class="p">[</span><span class="s2">&quot;group_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">])[[</span><span class="s2">&quot;timeStart&quot;</span><span class="p">,</span> <span class="s2">&quot;timeEnd&quot;</span><span class="p">]]</span>\
+        <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;timeStart&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="o">|</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;timeEnd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span>\
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;group_id&quot;</span><span class="p">,</span> <span class="s2">&quot;timeUpload&quot;</span><span class="p">,</span> <span class="s2">&quot;fileSize&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">records</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;deviceId&quot;</span><span class="p">,</span> <span class="s2">&quot;group_id&quot;</span><span class="p">,</span> <span class="s2">&quot;log_fileSize&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;last&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;deviceId&quot;</span><span class="p">,</span> <span class="s2">&quot;group_id_start&quot;</span><span class="p">,</span> <span class="s2">&quot;fileSize&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">records</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;deviceId&quot;</span><span class="p">,</span> <span class="s2">&quot;group_id_start&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;last&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">records</span></div>
+
+
+
+<div class="viewcode-block" id="read_record">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.read_record">[docs]</a>
+<span class="k">def</span> <span class="nf">read_record</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads a specific device record based on the provided parameters.</span>
+
+<span class="sd">    :param row: A row containing the record information.</span>
+<span class="sd">    :type row: pandas Series</span>
+
+<span class="sd">    :param device_type: The type of device. Must be one of &#39;SLP_night&#39;, &#39;STS&#39;, &#39;HRV&#39;, &#39;VIT&#39;, &#39;GVA&#39;, &#39;MCR_MCR&#39;, &#39;MCR_MCL&#39;, &#39;COG_dst&#39;, &#39;COG_pvt&#39;.</span>
+<span class="sd">    :type device_type: str</span>
+
+<span class="sd">    :param tup_dates: DataFrame containing Tup dates for the records.</span>
+<span class="sd">    :type tup_dates: pandas.DataFrame</span>
+
+<span class="sd">    :return: DataFrame containing the read data from the archive matching the specified parameters.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises Exception: If there is an error while reading the data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">record_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;fileId&quot;</span><span class="p">]</span>
+    <span class="n">record_name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;fileName&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s2">&quot;_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">device_type</span><span class="p">:</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">record_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">file_regex</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">record</span><span class="si">}</span><span class="s2">.csv$&quot;</span>
+    <span class="k">elif</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;MCR_MCR&quot;</span><span class="p">,</span> <span class="s2">&quot;MCR_MCL&quot;</span><span class="p">]:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">device_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">file_regex</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">device_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">file_regex</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;.+_</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">.csv$&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">read_data_from_archive</span><span class="p">(</span><span class="n">record_id</span><span class="p">,</span> <span class="n">file_regex</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to read data for </span><span class="si">{</span><span class="n">record_id</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">record_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># to datetime</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">start_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">start_timestamp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;mixed&quot;</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">end_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">end_timestamp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;mixed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Map tup</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">add_tups</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">,</span> <span class="n">time_header</span><span class="o">=</span><span class="s2">&quot;end_timestamp&quot;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="get_AX_location">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.get_AX_location">[docs]</a>
+<span class="k">def</span> <span class="nf">get_AX_location</span><span class="p">(</span><span class="n">file_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine the device location (wrist or back).</span>
+
+<span class="sd">    :param file_id: The unique identifier of the file to process.</span>
+<span class="sd">    :type file_id: str</span>
+
+<span class="sd">    :return: A string indicating the device location (&quot;wrist&quot; or &quot;back&quot;).</span>
+<span class="sd">             Returns &quot;unknown&quot; if the location cannot be determined or an error occurs.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises Exception: If the file cannot be read or processed, the exception is caught and logged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">read_data_from_archive</span><span class="p">(</span>
+            <span class="n">file_id</span><span class="p">,</span> <span class="s2">&quot;^measurement_.*_classification_24h.csv$&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">visit</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">visit_name</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to read data for </span><span class="si">{</span><span class="n">file_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span>
+
+    <span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;wrist&quot;</span> <span class="k">if</span> <span class="s2">&quot;wrist&quot;</span> <span class="ow">in</span> <span class="n">visit</span> <span class="k">else</span> <span class="s2">&quot;back&quot;</span>
+    <span class="k">return</span> <span class="n">location</span></div>
+
+
+
+<div class="viewcode-block" id="read_data_from_archive">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.device_data_manager.read_data_from_archive">[docs]</a>
+<span class="k">def</span> <span class="nf">read_data_from_archive</span><span class="p">(</span><span class="n">record_id</span><span class="p">,</span> <span class="n">file_regex</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract and read a specific file from a compressed archive.</span>
+
+<span class="sd">    This function searches for a file within a ZIP archive that matches a given regex pattern,</span>
+<span class="sd">    reads its content, and returns it as a DataFrame.</span>
+
+<span class="sd">    :param record_id: The unique identifier of the archive to process.</span>
+<span class="sd">    :type record_id: str</span>
+
+<span class="sd">    :param file_regex: The regular expression pattern to match the desired file inside the archive.</span>
+<span class="sd">    :type file_regex: str</span>
+
+<span class="sd">    :param sep: The delimiter used in the file to separate values (default is &quot;,&quot;).</span>
+<span class="sd">    :type sep: str, optional</span>
+
+<span class="sd">    :return: A DataFrame containing the data from the matched file.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises FileNotFoundError: If no file matching the regex is found in the archive.</span>
+<span class="sd">    :raises UnicodeDecodeError: If the file content cannot be decoded using UTF-8.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">record_stream</span> <span class="o">=</span> <span class="n">get_file_content</span><span class="p">(</span><span class="n">record_id</span><span class="p">)</span>
+    <span class="n">compressed_data</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">record_stream</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">compressed_data</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">file_info</span> <span class="ow">in</span> <span class="n">zf</span><span class="o">.</span><span class="n">infolist</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">file_regex</span><span class="p">,</span> <span class="n">file_info</span><span class="o">.</span><span class="n">filename</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="k">with</span> <span class="n">zf</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_info</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">UnicodeDecodeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Could not decode file </span><span class="si">{</span><span class="n">file_info</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> in UTF-8&quot;</span>
+                    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Could not find file matching regex &#39;</span><span class="si">{</span><span class="n">file_regex</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

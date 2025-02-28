@@ -1,0 +1,1071 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.dataset_manager.diaries_manager &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.dataset_manager.diaries_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.dataset_manager.diaries_manager</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">add_tups</span><span class="p">,</span>
+    <span class="n">get_tup_dates</span><span class="p">,</span>
+    <span class="n">add_tup_day</span><span class="p">,</span>
+    <span class="n">check_valid_adam</span><span class="p">,</span>
+    <span class="n">check_cohorts</span><span class="p">,</span>
+    <span class="n">check_valid_dataset</span><span class="p">,</span>
+    <span class="n">check_valid_ias_dataset</span><span class="p">,</span>
+    <span class="n">check_participants</span><span class="p">,</span>
+    <span class="n">read_dataset</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="read_adam_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.read_adam_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">read_adam_dataset</span><span class="p">(</span>
+    <span class="n">data_type</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+    <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+    <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads adam dataset that is saved on the DMP for a given version, filtering by cohorts, participants and analysis set.</span>
+
+<span class="sd">    :param data_type: The type of the data we want to load.</span>
+<span class="sd">        Must be one of : [&quot;ADDI&quot;, &quot;ADSL&quot;, &quot;ADCL&quot;, &quot;ADPRO&quot;]</span>
+<span class="sd">    :type data_type: str</span>
+
+<span class="sd">    :param version: Specifies the version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: The analysis set to use (&#39;ias&#39; or &#39;eas&#39;). Default is &#39;ias&#39;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: A list of participant IDs to include in the dataset. Default is None, all participants for the dataset (ias or eas) are loaded.</span>
+<span class="sd">    :type participants: list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: Specifies the dataset of the identification set to load. Must be one of &#39;Train&#39;, &#39;Test&#39;, or &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: A list of cohorts to load. Default is None, all cohorts are loaded.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: A DataFrame containing the filtered dataset.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If no file corresponding to the given parameters is found.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cohorts</span> <span class="o">=</span> <span class="n">check_cohorts</span><span class="p">(</span><span class="n">cohorts</span><span class="p">)</span>
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">check_valid_adam</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+    <span class="n">ias_dataset</span> <span class="o">=</span> <span class="n">check_valid_ias_dataset</span><span class="p">(</span><span class="n">ias_dataset</span><span class="p">)</span>
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">check_participants</span><span class="p">(</span><span class="n">participants</span><span class="p">)</span>
+
+    <span class="n">adam_dataset</span> <span class="o">=</span> <span class="n">read_dataset</span><span class="p">(</span>
+        <span class="n">data_type</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">imputation</span><span class="p">,</span> <span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="c1"># Filter cohorts</span>
+    <span class="k">if</span> <span class="n">cohorts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">adam_dataset</span> <span class="o">=</span> <span class="n">adam_dataset</span><span class="p">[</span>
+            <span class="n">adam_dataset</span><span class="o">.</span><span class="n">COHORT</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">cohorts</span><span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="c1"># Filter participants</span>
+    <span class="k">if</span> <span class="n">participants</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">adam_dataset</span> <span class="o">=</span> <span class="n">adam_dataset</span><span class="p">[</span>
+            <span class="n">adam_dataset</span><span class="o">.</span><span class="n">USUBJID</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">participants</span><span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="c1"># Filter ias_dataset</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">analysis_set</span> <span class="o">==</span> <span class="s2">&quot;ias&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ias_dataset</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;ADDI&quot;</span><span class="p">:</span>
+            <span class="n">ias_dataset</span> <span class="o">=</span> <span class="n">ias_dataset</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">adam_dataset</span> <span class="o">=</span> <span class="n">adam_dataset</span><span class="p">[</span>
+            <span class="n">adam_dataset</span><span class="o">.</span><span class="n">IASSET</span> <span class="o">==</span> <span class="n">ias_dataset</span>
+        <span class="p">]</span>
+
+    <span class="n">adam_dataset</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">:</span> <span class="s2">&quot;subject_id&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">adam_dataset</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="load_diaries">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.load_diaries">[docs]</a>
+<span class="k">def</span> <span class="nf">load_diaries</span><span class="p">(</span>
+    <span class="n">concept</span><span class="p">,</span>
+    <span class="n">window_size</span><span class="p">,</span>
+    <span class="n">change_from_baseline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+    <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+    <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">agg_daily</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load diaries related to a specific study concept and a defined window size, with the option to account for changes from baselines, and select the participants or cohorts to include.</span>
+
+<span class="sd">    :param concept: Concept to load. Must be one of &#39;F&#39; (fatigue), &#39;SQ&#39; (sleep quality), &#39;DS&#39; (daytime sleepiness), &#39;all&#39; (to load all three concepts), &#39;confounders&#39; to load confounders (Anxiousness, Mood, Pain).</span>
+<span class="sd">    :type concept: str</span>
+
+<span class="sd">    :param window_size: The timing of the questions that we want to load. Must be one of &#39;intra_daily&#39;, &#39;daily&#39;.</span>
+<span class="sd">    :type window_size: str</span>
+
+<span class="sd">    :param change_from_baseline: If True, we compute the changes from baselines, otherwise we load the answers of the patients. Default is False.</span>
+<span class="sd">    :type change_from_baseline: bool, optional</span>
+
+<span class="sd">    :param version: Specifies the version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :param agg_daily: function to aggregate diaries daily with. Default is &quot;mean&quot;.</span>
+<span class="sd">    :type agg_daily: str, optional</span>
+
+<span class="sd">    :return: A DataFrame with diaries corresponding to the chosen parameters.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If the parameters are not correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">mapping_concept_questions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;overall_fatigue_vas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;physical_fatigue_vas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mental_fatigue_vas&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;SQ&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;sleep_quality_vas&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;DS&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;KSS&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;confounders&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;anxiousness_vas&quot;</span><span class="p">,</span> <span class="s2">&quot;mood_vas&quot;</span><span class="p">,</span> <span class="s2">&quot;pain_vas&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;overall_fatigue_vas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;physical_fatigue_vas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mental_fatigue_vas&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;KSS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sleep_quality_vas&quot;</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mapping_concept_questions</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid concept: </span><span class="si">{</span><span class="n">concept</span><span class="si">}</span><span class="s2">. Must be one of &#39;F&#39;, &#39;SQ&#39;, &#39;DS&#39;, &#39;all&#39; and &#39;confounders&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="n">mapping_concept_questions</span><span class="p">[</span><span class="n">concept</span><span class="p">]</span>
+
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">format_diaries</span><span class="p">(</span>
+        <span class="n">questions</span><span class="p">,</span>
+        <span class="n">window_size</span><span class="p">,</span>
+        <span class="n">change_from_baseline</span><span class="p">,</span>
+        <span class="n">version</span><span class="p">,</span>
+        <span class="n">imputation</span><span class="p">,</span>
+        <span class="n">analysis_set</span><span class="p">,</span>
+        <span class="n">participants</span><span class="p">,</span>
+        <span class="n">ias_dataset</span><span class="p">,</span>
+        <span class="n">cohorts</span><span class="p">,</span>
+        <span class="n">agg_daily</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">diaries</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="format_diaries">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.format_diaries">[docs]</a>
+<span class="k">def</span> <span class="nf">format_diaries</span><span class="p">(</span>
+    <span class="n">questions</span><span class="p">,</span>
+    <span class="n">window_size</span><span class="p">,</span>
+    <span class="n">change_from_baseline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+    <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span>
+    <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">agg_daily</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load diaries choosing specific questions and with a defined window size, and the option to account for changes from baselines, and select the participants or cohorts to include.</span>
+
+<span class="sd">    :param questions: List of questions to load. Each must be one of &quot;overall_fatigue_vas&quot;, &quot;physical_fatigue_vas&quot;, &quot;mental_fatigue_vas&quot;, &quot;sleep_quality_vas&quot;, &quot;KSS&quot;, &quot;PGIS-F&quot;, &quot;PGIC-F&quot;, &quot;PGIS-SQ&quot;, &quot;PGIC-SQ&quot;, &quot;PGIS-DS&quot;, &quot;PGIC-DS&quot;, &quot;anxiousness_vas&quot;, &quot;mood_vas&quot;, &quot;pain_vas&quot;.</span>
+<span class="sd">    :type questions: list of str</span>
+
+<span class="sd">    :param window_size: The timing of the questions that we want to load. Must be one of &#39;intra_daily&#39;, &#39;daily&#39;.</span>
+<span class="sd">    :type window_size: str</span>
+
+<span class="sd">    :param change_from_baseline: If True, we compute the changes from baselines, otherwise we load the answers of the patients. Default is False.</span>
+<span class="sd">    :type change_from_baseline: bool, optional</span>
+
+<span class="sd">    :param version: Specifies the version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :param agg_daily: function to aggregate diaries daily with. Default is &quot;mean&quot;.</span>
+<span class="sd">    :type agg_daily: str, optional</span>
+
+<span class="sd">    :return: A DataFrame with diaries corresponding to the chosen parameters.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If the parameters are not correct.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">change_from_baseline</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Change from baseline must be a boolean.&quot;</span><span class="p">)</span>
+
+    <span class="n">questions_dict</span> <span class="o">=</span> <span class="n">get_questions_dict</span><span class="p">()</span>
+
+    <span class="c1"># Keep only valid questions</span>
+    <span class="n">valid_questions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">questions_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">invalid_questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_questions</span><span class="p">]</span>
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">valid_questions</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalid_questions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Questions </span><span class="si">{</span><span class="n">invalid_questions</span><span class="si">}</span><span class="s2"> are invalid. &quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Valid questions are : </span><span class="si">{</span><span class="n">valid_questions</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No valid questions. Valid questions are : </span><span class="si">{</span><span class="n">valid_questions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">window_size</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;intra_daily&quot;</span><span class="p">,</span> <span class="s2">&quot;daily&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid window size: </span><span class="si">{</span><span class="n">window_size</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="s2">&quot;Must be one of &#39;intra_daily&#39;, &#39;daily&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">diary_questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">questions_dict</span><span class="p">[</span><span class="n">question</span><span class="p">][</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">]</span>
+                       <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">]</span>
+
+    <span class="n">diary</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span>
+        <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADDI&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+        <span class="n">imputation</span><span class="o">=</span><span class="n">imputation</span><span class="p">,</span>
+        <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+        <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+        <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+        <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Filter questions</span>
+    <span class="n">diary</span> <span class="o">=</span> <span class="n">diary</span><span class="p">[</span><span class="n">diary</span><span class="o">.</span><span class="n">PARAMCD</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">diary_questions</span><span class="p">)]</span>
+
+    <span class="c1"># Pivot dataframe</span>
+    <span class="n">pivoted_diary_df</span> <span class="o">=</span> <span class="n">diary</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;ADT&quot;</span><span class="p">,</span> <span class="s2">&quot;TUPNUM&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM&quot;</span><span class="p">],</span>
+        <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;PARAMCD&quot;</span><span class="p">,</span>
+        <span class="n">values</span><span class="o">=</span><span class="s2">&quot;AVAL&quot;</span><span class="p">,</span>
+        <span class="n">aggfunc</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">pivoted_diary_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Keep only the questions chosen</span>
+    <span class="n">columns_di</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;ADT&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;TUPNUM&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">diary_questions</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">pivoted_diary_df</span><span class="p">[</span><span class="n">columns_di</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># Remove NaNs rows</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="n">diary_questions</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Rename diary questions for better clarity</span>
+    <span class="n">rename_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">diary_questions</span><span class="p">,</span> <span class="n">questions</span><span class="p">))</span>
+    <span class="n">diaries</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">rename_dict</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Combine time columns</span>
+    <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span>
+    <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">time</span>
+    <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">diaries</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Replace TUPNUM by tup</span>
+    <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TUPNUM&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">map_tup</span><span class="p">)</span>
+
+    <span class="c1"># Get tup dates</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">get_tup_dates</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="c1"># Change tup if needed</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">add_tups</span><span class="p">(</span><span class="n">diaries</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">)</span>
+
+    <span class="c1"># Remove rows with tup=-1</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="p">[</span>
+        <span class="p">(</span>
+            <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;M&quot;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;=</span> <span class="mi">11</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">|</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">12</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;=</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">|</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;E&quot;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&gt;=</span> <span class="mi">17</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">&lt;=</span> <span class="mi">23</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">|</span> <span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;daily&quot;</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">])</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;ADT&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM&quot;</span><span class="p">,</span> <span class="s2">&quot;TUPNUM&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Convert questions to numeric</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+        <span class="n">diaries</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">diaries</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">window_size</span> <span class="o">==</span> <span class="s2">&quot;daily&quot;</span><span class="p">:</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">get_daily_diaries</span><span class="p">(</span><span class="n">diaries</span><span class="p">,</span> <span class="n">agg_daily</span><span class="p">)</span>
+        <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;daily&quot;</span>
+        <span class="c1"># Make sure all daily are in the same row</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> 
+                                   <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span>
+                                 <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;daily&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">)</span>
+        <span class="c1"># Make sure all &quot;E&quot; are in the same row</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span>
+                                   <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span>
+                                 <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="n">change_from_baseline</span><span class="p">:</span>
+        <span class="n">baselines</span> <span class="o">=</span> <span class="n">get_baselines</span><span class="p">(</span><span class="n">diaries</span><span class="p">)</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">baselines</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;right&quot;</span>
+        <span class="p">)</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">diaries</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+            <span class="n">diaries</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">_change&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">diaries</span><span class="p">[</span><span class="n">question</span><span class="p">]</span> <span class="o">-</span> <span class="n">diaries</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">_baseline&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">question</span> <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">])</span>
+
+        <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">_baseline&quot;</span> <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">_change&quot;</span> <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span>
+        <span class="p">]</span>
+        <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Add tup day</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">add_tup_day</span><span class="p">(</span><span class="n">diaries</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">)</span>
+
+    <span class="c1"># Change column order</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">questions</span>
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+
+    <span class="n">diaries</span> <span class="o">=</span> <span class="n">diaries</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">diaries</span></div>
+
+
+
+<div class="viewcode-block" id="get_daily_diaries">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_daily_diaries">[docs]</a>
+<span class="k">def</span> <span class="nf">get_daily_diaries</span><span class="p">(</span><span class="n">diary</span><span class="p">,</span> <span class="n">agg_daily</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the average of morning, afternoon, or evening diaries answered for each subject and day</span>
+<span class="sd">    only if exactly 3 diaries were answered.</span>
+
+<span class="sd">    :param diary: initial diary with 3 times a day answers.</span>
+<span class="sd">    :type diary: pandas.DataFrame</span>
+
+<span class="sd">    :param agg_daily: function to aggregate diaries daily with</span>
+<span class="sd">    :type agg_daily: str</span>
+
+<span class="sd">    :return: A DataFrame with the daily aggregated diaries.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diary</span> <span class="o">=</span> <span class="n">diary</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">diary</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diary</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span>
+
+    <span class="n">questions_dict</span> <span class="o">=</span> <span class="n">get_questions_dict</span><span class="p">()</span>
+
+    <span class="n">agg_questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions_dict</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">diary</span><span class="o">.</span><span class="n">columns</span>
+                     <span class="ow">and</span> <span class="n">questions_dict</span><span class="p">[</span><span class="n">q</span><span class="p">][</span><span class="s2">&quot;questions_per_day&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">daily_questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions_dict</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">diary</span><span class="o">.</span><span class="n">columns</span>
+                       <span class="ow">and</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">agg_questions</span><span class="p">]</span>
+
+    <span class="n">daily_diary</span> <span class="o">=</span> <span class="n">diary</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">agg_questions</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">],</span>
+                                                            <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">agg_questions</span><span class="p">:</span>
+        <span class="c1"># Count the number of answers for each subject and date and filter with only 3 answers</span>
+        <span class="n">valid_counts</span> <span class="o">=</span> <span class="p">(</span><span class="n">diary</span><span class="p">[</span><span class="n">diary</span><span class="p">[</span><span class="s2">&quot;TIMING&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])]</span>
+                        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">])</span>
+                        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="n">diary</span> <span class="o">=</span> <span class="p">(</span><span class="n">valid_counts</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">])</span>
+                 <span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="n">col</span><span class="p">:</span> <span class="n">agg_daily</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">agg_questions</span><span class="p">})</span>
+                 <span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                 <span class="o">.</span><span class="n">reset_index</span><span class="p">())</span>
+
+        <span class="n">diary</span> <span class="o">=</span> <span class="n">diary</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">daily_diary</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
+
+    <span class="n">diary</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="n">agg_questions</span> <span class="o">+</span>
+                 <span class="n">daily_questions</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">diary</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_baselines">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_baselines">[docs]</a>
+<span class="k">def</span> <span class="nf">get_baselines</span><span class="p">(</span><span class="n">filtered_diary</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the baselines from a diary that is already filtered with its window size.</span>
+
+<span class="sd">    :param filtered_diaries: DataFrame with either daily or intra_daily diaries.</span>
+<span class="sd">    :type filtered_diaries: pandas.DataFrame</span>
+
+<span class="sd">    :return: DataFrame with the following columns: subject_id, TIMING and the baselines (mean values of diary questions during TUP 1).</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_tup1</span> <span class="o">=</span> <span class="n">filtered_diary</span><span class="p">[</span><span class="n">filtered_diary</span><span class="o">.</span><span class="n">tup</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">col</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">filtered_diary</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span> <span class="s2">&quot;ADT&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+        <span class="n">df_tup1</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df_tup1</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">questions</span>
+    <span class="n">mean_results</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">df_tup1</span><span class="p">[</span><span class="n">questions</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">mean_results</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_baseline&quot;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">questions</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">mean_results</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_demographics">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_demographics">[docs]</a>
+<span class="k">def</span> <span class="nf">get_demographics</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span> <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load demographics (COHORT, AGE, GENDER, BMI and TIMESINCEDIAG) for each subject.</span>
+
+<span class="sd">    :param version: version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: A DataFrame containing the following columns : [&quot;subject_id&quot;, &quot;COHORT&quot;, &quot;AGE&quot;, &quot;GENDER&quot;, &quot;BMI&quot;, &quot;TIMESINCEDIAG&quot;].</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span>
+                                     <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                     <span class="n">imputation</span><span class="o">=</span><span class="n">imputation</span><span class="p">,</span>
+                                     <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                     <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+                                     <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+                                     <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">)</span>
+
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;COHORT&quot;</span><span class="p">,</span> <span class="s2">&quot;AGE&quot;</span><span class="p">,</span> <span class="s2">&quot;GENDER&quot;</span><span class="p">,</span> <span class="s2">&quot;BMI&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMESINCEDIAG&quot;</span><span class="p">]</span>
+
+    <span class="n">demographics</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">participants</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+            <span class="n">by</span><span class="o">=</span><span class="s2">&quot;subject_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AGE&quot;</span><span class="p">,</span> <span class="s2">&quot;BMI&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMESINCEDIAG&quot;</span><span class="p">]:</span>
+        <span class="n">demographics</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">demographics</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">demographics</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_longitudinal_covariates">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_longitudinal_covariates">[docs]</a>
+<span class="k">def</span> <span class="nf">get_longitudinal_covariates</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load longitudinal covariates (Day_Type, Season) for each subject_id, Date.</span>
+
+<span class="sd">    :param dataset: DataFrame containing &quot;subject_id&quot; and &quot;Date&quot; columns.</span>
+<span class="sd">    :type dataset: pandas.DataFrame</span>
+
+<span class="sd">    :return: A DataFrame with the following columns [&quot;subject_id&quot;, &quot;Date&quot;, &quot;Season&quot;, &quot;Day_Type&quot;]</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">longitudinal_covariates</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">dataset</span><span class="p">[[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Date&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Weekday</span>
+    <span class="n">longitudinal_covariates</span><span class="p">[</span><span class="s2">&quot;Day_Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">longitudinal_covariates</span><span class="p">[</span><span class="s2">&quot;Date&quot;</span><span class="p">]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">dayofweek</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s2">&quot;Weekday&quot;</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s2">&quot;Weekend&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Season</span>
+    <span class="n">longitudinal_covariates</span><span class="p">[</span><span class="s2">&quot;Season&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">longitudinal_covariates</span><span class="p">[</span><span class="s2">&quot;Date&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="n">assign_season</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">longitudinal_covariates</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="assign_season">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.assign_season">[docs]</a>
+<span class="k">def</span> <span class="nf">assign_season</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the season corresponding to a date.</span>
+
+<span class="sd">    :param date: Date to assign a season to.</span>
+<span class="sd">    :type date: datetime</span>
+
+<span class="sd">    :return: Season (Spring, Summer, Fall or Winter)</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">month</span>
+    <span class="n">day</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">day</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&gt;=</span> <span class="mi">21</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">6</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">20</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Spring&quot;</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">6</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&gt;=</span> <span class="mi">21</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">9</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">20</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Summer&quot;</span>
+    <span class="k">elif</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">9</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&gt;=</span> <span class="mi">21</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="mi">12</span> <span class="ow">and</span> <span class="n">day</span> <span class="o">&lt;=</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Fall&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Winter&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="map_tup">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.map_tup">[docs]</a>
+<span class="k">def</span> <span class="nf">map_tup</span><span class="p">(</span><span class="n">tup_value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Associates a string containing a “TUP” statement with the corresponding integer. ex: TUP 1 -&gt; 1</span>
+
+<span class="sd">    :param tup_value: String to be analyzed.</span>
+<span class="sd">    :type tup_value: str</span>
+
+<span class="sd">    :return: An integer corresponding to the number found in the string (1 to 4) or None if no match is found.</span>
+<span class="sd">    :rtype: int, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+        <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;TUP </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">tup_value</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># If there is no match</span></div>
+
+
+
+<div class="viewcode-block" id="get_baseline_PROs">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_baseline_PROs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_baseline_PROs</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span> <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the baseline (value at Start of TUP 1) of PROs (FACITF-SCORE, KSS and SLPD4). This functions calls get_tup_PROs function.</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: DataFrame with the following columns: [&quot;subject_id, &quot;FACITF-SCORE_baseline_7days&quot;, &quot;KSS_baseline_7days&quot;, &quot;SLPD4_baseline_7days&quot;]</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FACITF-SCORE&quot;</span><span class="p">,</span> <span class="s2">&quot;KSS&quot;</span><span class="p">,</span> <span class="s2">&quot;SLPD4&quot;</span><span class="p">]</span>
+    <span class="n">pros</span> <span class="o">=</span> <span class="n">get_tup_PROs</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">imputation</span><span class="p">,</span>
+                        <span class="n">analysis_set</span><span class="p">,</span> <span class="n">participants</span><span class="p">,</span> <span class="n">ias_dataset</span><span class="p">,</span> <span class="n">cohorts</span><span class="p">)</span>
+    <span class="n">pros_tup1</span> <span class="o">=</span> <span class="n">pros</span><span class="p">[</span><span class="n">pros</span><span class="o">.</span><span class="n">ATUP</span> <span class="o">==</span> <span class="s1">&#39;Start of TUP 1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pros_tup1</span><span class="p">[[</span><span class="s1">&#39;subject_id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">questions</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">_baseline_7days&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_disease_score">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_disease_score">[docs]</a>
+<span class="k">def</span> <span class="nf">get_disease_score</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span> <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the diseases score for each patients of specified cohorts.</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: DataFrame with disease scores corresponding to each subject_id and tup.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If cohorts argument is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">clinical_df</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADCL&quot;</span><span class="p">,</span>
+                                    <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                    <span class="n">imputation</span><span class="o">=</span><span class="n">imputation</span><span class="p">,</span>
+                                    <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                    <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+                                    <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+                                    <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">)</span>
+
+    <span class="n">clinical_df</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="p">[</span><span class="s2">&quot;TUPNUM&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">map_tup</span><span class="p">)</span>
+
+    <span class="n">clinical_df</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">:</span> <span class="s2">&quot;subject_id&quot;</span><span class="p">})</span>
+
+    <span class="n">filtered_df</span> <span class="o">=</span> <span class="n">clinical_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">])[</span>
+        <span class="p">[</span><span class="s2">&quot;PARAMCD&quot;</span><span class="p">,</span> <span class="s2">&quot;AVAL&quot;</span><span class="p">]]</span>
+
+    <span class="n">filtered_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">filtered_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;PARAMCD&quot;</span><span class="p">:</span> <span class="s2">&quot;Disease_test&quot;</span><span class="p">,</span> <span class="s2">&quot;AVAL&quot;</span><span class="p">:</span> <span class="s2">&quot;score&quot;</span><span class="p">})</span>
+        <span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="n">filtered_df</span> <span class="o">=</span> <span class="n">filtered_df</span><span class="p">[</span><span class="n">filtered_df</span><span class="o">.</span><span class="n">Disease_test</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;SCORE&#39;</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">filtered_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_tup_PROs">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_tup_PROs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_tup_PROs</span><span class="p">(</span><span class="n">questions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span> <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ias_dataset</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="n">cohorts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function retrieves PROs data from the ADAM dataset ADPRO.</span>
+<span class="sd">    It allows filtering by version.</span>
+
+<span class="sd">    :param questions: List of pros to load. Default is None. Each must be one of &quot;FACITF-SCORE&quot;, &quot;SLPD4&quot;, &quot;KSS&quot;, &quot;fVAS&quot;, &quot;sqVAS&quot;, &quot;PGIS-F&quot;, &quot;PGIC-F&quot;, &quot;PGIS-SQ&quot;, &quot;PGIC-SQ&quot;, &quot;PGIS-DS&quot;, &quot;PGIC-DS&quot;.</span>
+<span class="sd">    :type questions: list of str</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :param participants: List of participant to consider. Default is None, we load all participant from the given dataset (ias or eas).</span>
+<span class="sd">    :type participants: str or list of str, optional</span>
+
+<span class="sd">    :param ias_dataset: If participants is None, we load the Train set, the Test set or both. Must be one of &#39;Train&#39;, &#39;Test&#39; and &#39;all&#39;. Only useful if analysis_set=&quot;ias&quot;. Default is &#39;Train&#39;.</span>
+<span class="sd">    :type ias_dataset: str, optional</span>
+
+<span class="sd">    :param cohorts: The list of the cohorts to consider. Default is None, we consider them all.</span>
+<span class="sd">    :type cohorts: list of str, optional</span>
+
+<span class="sd">    :return: DataFrame with TUP-based PROs.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+    <span class="n">ias_dataset</span> <span class="o">=</span> <span class="n">check_valid_ias_dataset</span><span class="p">(</span><span class="n">ias_dataset</span><span class="p">)</span>
+
+    <span class="n">valid_questions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;FACITF-SCORE&quot;</span><span class="p">,</span> <span class="s2">&quot;SLPD4&quot;</span><span class="p">,</span> <span class="s2">&quot;KSS&quot;</span><span class="p">,</span> <span class="s2">&quot;fVAS&quot;</span><span class="p">,</span> <span class="s2">&quot;sqVAS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PGIS-F&quot;</span><span class="p">,</span> <span class="s2">&quot;PGIC-F&quot;</span><span class="p">,</span> <span class="s2">&quot;PGIS-SQ&quot;</span><span class="p">,</span> <span class="s2">&quot;PGIC-SQ&quot;</span><span class="p">,</span> <span class="s2">&quot;PGIS-DS&quot;</span><span class="p">,</span> <span class="s2">&quot;PGIC-DS&quot;</span>
+    <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">questions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FACITF-SCORE&quot;</span><span class="p">,</span> <span class="s2">&quot;SLPD4&quot;</span><span class="p">,</span> <span class="s2">&quot;KSS&quot;</span><span class="p">,</span> <span class="s2">&quot;fVAS&quot;</span><span class="p">,</span> <span class="s2">&quot;sqVAS&quot;</span><span class="p">]</span>
+
+    <span class="n">invalid_questions</span> <span class="o">=</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_questions</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalid_questions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Questions </span><span class="si">{</span><span class="n">invalid_questions</span><span class="si">}</span><span class="s2"> are invalid. &quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Valid questions are : </span><span class="si">{</span><span class="n">valid_questions</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No valid questions. Valid questions are : </span><span class="si">{</span><span class="n">valid_questions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">pros</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADPRO&quot;</span><span class="p">,</span>
+                             <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                             <span class="n">imputation</span><span class="o">=</span><span class="n">imputation</span><span class="p">,</span>
+                             <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                             <span class="n">participants</span><span class="o">=</span><span class="n">participants</span><span class="p">,</span>
+                             <span class="n">ias_dataset</span><span class="o">=</span><span class="n">ias_dataset</span><span class="p">,</span>
+                             <span class="n">cohorts</span><span class="o">=</span><span class="n">cohorts</span><span class="p">)</span>
+
+    <span class="n">pros</span> <span class="o">=</span> <span class="n">pros</span><span class="p">[</span><span class="n">pros</span><span class="o">.</span><span class="n">PARAMCD</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">questions</span><span class="p">)]</span>
+
+    <span class="n">pivoted_pros_df</span> <span class="o">=</span> <span class="n">pros</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TUPNUM&quot;</span><span class="p">,</span> <span class="s2">&quot;ATUP&quot;</span><span class="p">],</span>
+        <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;PARAMCD&quot;</span><span class="p">,</span>
+        <span class="n">values</span><span class="o">=</span><span class="s2">&quot;AVAL&quot;</span><span class="p">,</span>
+        <span class="n">aggfunc</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">pivoted_pros_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">pivoted_pros_df</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pivoted_pros_df</span><span class="p">[</span><span class="s2">&quot;TUPNUM&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">map_tup</span><span class="p">)</span>
+
+    <span class="c1"># Keep only the useful columns</span>
+    <span class="n">columns_pros</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;ATUP&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">questions</span>
+    <span class="n">pros_df</span> <span class="o">=</span> <span class="n">pivoted_pros_df</span><span class="p">[</span><span class="n">columns_pros</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">pros_df</span> <span class="o">=</span> <span class="n">pros_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ADT&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">pros_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="expand_row">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.expand_row">[docs]</a>
+<span class="k">def</span> <span class="nf">expand_row</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a DataFrame with a row for each day between the start_date and end_date. Useful only if TIMING is daily.</span>
+
+<span class="sd">    :param row: Row containing &quot;subject_id&quot;, &quot;tup&quot;, &quot;start_date&quot; and &quot;stop_date&quot; information.</span>
+<span class="sd">    :type row: pandas.Series</span>
+
+<span class="sd">    :return: DataFrame with all dates in the range, containing the following columns [&quot;subject_id&quot;, &quot;Time&quot;, &quot;TIMING&quot;, &quot;tup&quot;, &quot;tup_day&quot;]</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">date_range</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;stop_date&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;subject_id&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;Time&quot;</span><span class="p">:</span> <span class="n">date_range</span><span class="p">,</span>
+            <span class="s2">&quot;TIMING&quot;</span><span class="p">:</span> <span class="s2">&quot;daily&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;tup&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;tup_day&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">date_range</span><span class="p">)),</span>
+        <span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_timings">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_timings">[docs]</a>
+<span class="k">def</span> <span class="nf">get_timings</span><span class="p">(</span><span class="n">subjects</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">timing</span><span class="o">=</span><span class="s2">&quot;MAE&quot;</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">diaries</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span>
+                <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get timings corresponding either to diaries, or to subjects for a specified timing (M, A, E, MAE, intra_daily or daily).</span>
+
+<span class="sd">    :param subjects: List of subjects to consider. Default is None, we return None if diaries is also None, there is no incidence if diaries is not None.</span>
+<span class="sd">    :type subjects: list of str, optional</span>
+
+<span class="sd">    :param timing: timing to load if diaries is not None. Must be one of &quot;M&quot;, &quot;A&quot;, &quot;E&quot;, &quot;MAE&quot;, &quot;intra_daily&quot;, &quot;daily&quot;. Default is &quot;MAE&quot;.</span>
+<span class="sd">    :type timing: str, optional</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param diaries: diaries to extract timings from (extract the following columns : [&quot;subject_id&quot;, &quot;tup&quot;, &quot;tup_day&quot;, &quot;TIMING&quot;, &quot;Time&quot;])</span>
+<span class="sd">    :type diaries: pandas.DataFrame</span>
+
+<span class="sd">    :param imputation: Specifies if the dataset should include imputation data. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; or &quot;eas&quot;. Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :return: DataFrame with timings (contains the following columns : [&quot;subject_id&quot;, &quot;tup&quot;, &quot;tup_day&quot;, &quot;TIMING&quot;, &quot;Time&quot;])</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: if timing not in [&quot;M&quot;, &quot;A&quot;, &quot;E&quot;, &quot;MAE&quot;, &quot;intra_daily&quot;, &quot;daily&quot;], or if subjects are not valid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">diaries</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">diaries</span><span class="p">[[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span>
+                           <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">timings</span><span class="o">.</span><span class="n">Time</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">timings</span><span class="o">.</span><span class="n">Time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">timings</span>
+
+    <span class="n">subjects</span> <span class="o">=</span> <span class="n">check_participants</span><span class="p">(</span><span class="n">subjects</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">subjects</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">subjects</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">timing</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;MAE&quot;</span><span class="p">,</span> <span class="s2">&quot;intra_daily&quot;</span><span class="p">,</span> <span class="s2">&quot;daily&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;timing must be {&#39;M&#39;, &#39;A&#39;, &#39;E&#39;, &#39;MAE&#39;, &#39;intra_daily&#39;, &#39;daily&#39;}&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">get_tup_dates</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">)</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="p">[</span><span class="n">tup_dates</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">subjects</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">timing</span> <span class="o">==</span> <span class="s2">&quot;daily&quot;</span><span class="p">:</span>
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">expand_row</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">read_adam_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADDI&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                                    <span class="n">imputation</span><span class="o">=</span><span class="n">imputation</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">,</span>
+                                    <span class="n">participants</span><span class="o">=</span><span class="n">subjects</span><span class="p">)</span>
+
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">timings</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">:</span> <span class="s2">&quot;subject_id&quot;</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">timings</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">timings</span>
+
+        <span class="c1"># Combine time columns</span>
+        <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">timings</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+            <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">time</span>
+        <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;Time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+            <span class="n">timings</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;ADT&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;ATM&quot;</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">timings</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+            <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;TUPNUM&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
+        <span class="p">)[[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;TUPNUM&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">]]</span>
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">timings</span><span class="o">.</span><span class="n">TIMING</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">])]</span>
+
+        <span class="c1"># Map TUPs</span>
+        <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;tup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="s2">&quot;TUPNUM&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">map_tup</span><span class="p">)</span>
+
+        <span class="c1"># Change tup if needed</span>
+        <span class="n">timings</span> <span class="o">=</span> <span class="n">add_tups</span><span class="p">(</span><span class="n">timings</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">timing</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">]:</span>
+            <span class="n">timings</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[</span><span class="n">timings</span><span class="o">.</span><span class="n">TIMING</span> <span class="o">==</span> <span class="n">timing</span><span class="p">]</span>
+
+    <span class="c1"># Add tup day</span>
+    <span class="n">timings</span> <span class="o">=</span> <span class="n">add_tup_day</span><span class="p">(</span><span class="n">timings</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">)</span>
+
+    <span class="n">timings</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">timings</span> <span class="o">=</span> <span class="n">timings</span><span class="p">[[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMING&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span>
+        <span class="n">drop</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">timings</span></div>
+
+
+
+<div class="viewcode-block" id="get_questions_dict">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.diaries_manager.get_questions_dict">[docs]</a>
+<span class="k">def</span> <span class="nf">get_questions_dict</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a dictionary thats associates each diary question to its name in the ADAM dataset and the number of times the question is asked per day.</span>
+
+<span class="sd">    :return: Dictionary of questions.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">questions_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;overall_fatigue_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY01&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;physical_fatigue_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY02&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;mental_fatigue_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY03&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;sleep_quality_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY07&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;KSS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;KSS&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;anxiousness_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY04&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;mood_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY05&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;pain_vas&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY06&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+        <span class="s2">&quot;PGIS-F&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PGISCE1&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;PGIC-F&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PGISCE2&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;PGIS-SQ&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY08&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;PGIC-SQ&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIARY09&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;PGIS-DS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PGISCE3&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;PGIC-DS&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ADAM_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PGISCE4&quot;</span><span class="p">,</span> <span class="s2">&quot;questions_per_day&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">questions_dict</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+Model upload requirements
+=========================
+
+To upload a model, call the **upload_model** function with the path to the model directory. 
+
+This directory must meet the following requirements: 
+
+* **Required files**: Ensure that both config.json and inference.py are present.
+* **Model file**: The directory must contain a model file named model.
+* **Valid JSON**: Check if the JSON file is correct and contains the right arguments  (see :doc:`json_format`).
+* **Inference Function**: The inference.py file must define a run_inference function.
+* **Output of the run_inference function**: The run_inference function must output a pandas.DataFrame with the following columns : ['subject_id', 'tup', 'tup_day', 'Date', 'TIMING'] and a prediction column named "predicted\_{target_name}".
+* **run_inference function purpose**: The run_inference function must execute model inferences on a set of subjects. This function loads a pre-trained model, performs necessary transformations on the dataset, applies the model, and returns predictions in a DataFrame format.
+* **Function Parameters**: Verify that run_inference has the following parameters : "subjs", "version", "directory_path" and "savepath" (optional).
+* **No Unrelated Files**:  The directory must not contain any image or CSV files.
+
+Before uploading, your model will be tested on a patient to ensure it runs correctly.
+
+Model folder example
+====================
+
+config.json
+-----------
+
+.. literalinclude:: config.json
+   :language: json
+   :linenos:
+
+inference.py
+------------
+
+.. literalinclude:: inference.py
+   :language: python
+   :linenos:
+
+model.pkl
+---------
+
+This model is a **LinearRegression** implemented using **scikit-learn**.

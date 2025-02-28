@@ -1,0 +1,728 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.dataset_manager.utils &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.dataset_manager.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.dataset_manager.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span><span class="p">,</span> <span class="n">StringIO</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">dmpy</span> <span class="kn">import</span> <span class="n">list_study_versions</span><span class="p">,</span> <span class="n">upload_data</span><span class="p">,</span> <span class="n">list_files</span><span class="p">,</span> <span class="n">get_file_content</span>
+
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">study_id</span>
+
+
+<div class="viewcode-block" id="upload_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.upload_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">upload_dataset</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">,</span>
+    <span class="n">data_type</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload a dataset on the DMP, with the field id {data_type}_agg.</span>
+
+<span class="sd">    :param dataset: Dataset to upload.</span>
+<span class="sd">    :type dataset: pandas.DataFramr</span>
+
+<span class="sd">    :param data_type: The type of the data we want to upload. </span>
+<span class="sd">        Must be one of :</span>
+<span class="sd">        [&quot;ADDI&quot;, &quot;ADSL&quot;, &quot;ADCL&quot;, &quot;ADPRO&quot;, &quot;SLP_night&quot;, &quot;STS&quot;, &quot;HRV&quot;, </span>
+<span class="sd">        &quot;VIT&quot;, &quot;GVA&quot;, &quot;MCR_MCR&quot;, &quot;MCR_MCL&quot;, &quot;COG_pvt&quot;, &quot;COG_dst&quot;]</span>
+<span class="sd">    :type data_type: str</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: If True, we load the imputed dataset. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; (identification) or &quot;eas&quot; (evaluation). Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :return: The result of the upload process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Save on the DMP</span>
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">check_valid_type</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+
+    <span class="n">field_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_agg&quot;</span>
+
+    <span class="n">version_id</span> <span class="o">=</span> <span class="n">get_version_id</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">imputation</span><span class="p">:</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_imputed_dataset_</span><span class="si">{</span><span class="n">version_id</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_dataset_</span><span class="si">{</span><span class="n">version_id</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">csv_buffer</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">dataset</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_buffer</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">csv_buffer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">upload_data</span><span class="p">(</span>
+        <span class="n">study_id</span><span class="o">=</span><span class="n">study_id</span><span class="p">,</span>
+        <span class="n">field_id</span><span class="o">=</span><span class="n">field_id</span><span class="p">,</span>
+        <span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">,</span>
+        <span class="n">properties</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version_id</span><span class="p">,</span>
+            <span class="s2">&quot;version_tag&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+            <span class="s2">&quot;imputation&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">imputation</span><span class="p">),</span>
+            <span class="s2">&quot;analysis_set&quot;</span><span class="p">:</span> <span class="n">analysis_set</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">file_content</span><span class="o">=</span><span class="n">csv_buffer</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="read_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.read_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">read_dataset</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a dataset that is saved on the DMP, chosing the data_type, the version, if the dataset is imputed and the analysis set.</span>
+
+<span class="sd">    :param data_type: The type of the data we want to load. </span>
+<span class="sd">        Must be one of :</span>
+<span class="sd">        [&quot;ADDI&quot;, &quot;ADSL&quot;, &quot;ADCL&quot;, &quot;ADPRO&quot;, &quot;SLP_night&quot;, &quot;STS&quot;, &quot;HRV&quot;, </span>
+<span class="sd">        &quot;VIT&quot;, &quot;GVA&quot;, &quot;MCR_MCR&quot;, &quot;MCR_MCL&quot;, &quot;COG_pvt&quot;, &quot;COG_dst&quot;]</span>
+<span class="sd">    :type data_type: str</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param imputation: If True, we load the imputed dataset. Default is False.</span>
+<span class="sd">    :type imputation: bool, optional</span>
+
+<span class="sd">    :param analysis_set: &quot;ias&quot; (identification) or &quot;eas&quot; (evaluation). Default is &quot;ias&quot;.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+
+<span class="sd">    :return: The pre-saved dataset with the required properties.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If no file is found (probably a permission issue) or if no file_id corresponds to the version, imputation and analysis_set given.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">check_valid_type</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">check_valid_dataset</span><span class="p">(</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="n">field_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">_agg&quot;</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">list_files</span><span class="p">(</span><span class="n">study_id</span><span class="o">=</span><span class="n">study_id</span><span class="p">,</span> <span class="n">kinds</span><span class="o">=</span><span class="p">[</span><span class="n">field_id</span><span class="p">],</span> <span class="n">version_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">files_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">files_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The files DataFrame is empty. Please check your data access permissions.&quot;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fileids</span> <span class="o">=</span> <span class="n">files_df</span><span class="p">[</span>
+            <span class="n">files_df</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;imputation&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">imputation</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;analysis_set&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">analysis_set</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fileids</span> <span class="o">=</span> <span class="n">files_df</span><span class="p">[</span>
+            <span class="n">files_df</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version_tag&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">version</span>
+                <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;imputation&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">imputation</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;analysis_set&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">analysis_set</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">fileids</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No saved file correspond to the field_id </span><span class="si">{</span><span class="n">field_id</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;the analysis set </span><span class="si">{</span><span class="n">analysis_set</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;the version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> and the imputation </span><span class="si">{</span><span class="n">imputation</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">fileid</span> <span class="o">=</span> <span class="n">fileids</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;uploadTime&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">file_stream</span> <span class="o">=</span> <span class="n">get_file_content</span><span class="p">(</span><span class="n">fileid</span><span class="o">.</span><span class="n">fileId</span><span class="p">)</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">file_stream</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_tup_dates">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.get_tup_dates">[docs]</a>
+<span class="k">def</span> <span class="nf">get_tup_dates</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ias&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the tup start and stop dates.</span>
+
+<span class="sd">    :param version: Version of the data to use. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :return: A DataFrame with the start and stop dates for each TUP of each subject.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># read participant level information</span>
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">read_dataset</span><span class="p">(</span>
+        <span class="n">data_type</span><span class="o">=</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">imputation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="n">analysis_set</span><span class="p">)</span>
+
+    <span class="n">participants</span> <span class="o">=</span> <span class="n">participants</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">:</span> <span class="s2">&quot;subject_id&quot;</span><span class="p">})</span>
+
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">participants</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;subject_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span>
+        <span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">],</span>
+        <span class="n">value_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;TUP1DT&quot;</span><span class="p">,</span> <span class="s2">&quot;TUP2DT&quot;</span><span class="p">,</span> <span class="s2">&quot;TUP3DT&quot;</span><span class="p">,</span> <span class="s2">&quot;TUP4DT&quot;</span><span class="p">],</span>
+        <span class="n">var_name</span><span class="o">=</span><span class="s2">&quot;TUP&quot;</span><span class="p">,</span>
+        <span class="n">value_name</span><span class="o">=</span><span class="s2">&quot;start_date&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">tup_dates</span><span class="o">.</span><span class="n">TUP</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">TUP</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">&quot;TUP1DT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;TUP2DT&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;TUP3DT&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;TUP4DT&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">tup_dates</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;TUP&quot;</span><span class="p">:</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tup_dates</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">tup_dates</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span>
+    <span class="n">tup_dates</span><span class="p">[</span><span class="s2">&quot;stop_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+    <span class="n">tup_dates</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">tup_dates</span><span class="o">.</span><span class="n">tup</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;stop_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span>
+        <span class="n">days</span><span class="o">=</span><span class="mi">10</span>
+    <span class="p">)</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">])</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span>
+        <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;start_date&quot;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tup_dates</span></div>
+
+
+
+<div class="viewcode-block" id="add_tups">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.add_tups">[docs]</a>
+<span class="k">def</span> <span class="nf">add_tups</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">tup_dates</span><span class="p">,</span>
+    <span class="n">lag_days_before</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">lag_days_after</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">tup_header</span><span class="o">=</span><span class="s2">&quot;tup&quot;</span><span class="p">,</span>
+    <span class="n">subject_header</span><span class="o">=</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span>
+    <span class="n">time_header</span><span class="o">=</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a column TUP to the input vtp_records dataframe with</span>
+<span class="sd">    the corresponding TUP.</span>
+
+<span class="sd">    :param data: input dataframe where TUP mapping is applied</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :param lag_days_before: nb of allowed days before TUP starts</span>
+<span class="sd">    :type lag_days_before: int</span>
+
+<span class="sd">    :param lag_days_after: nb of allowed days after TUP ends</span>
+<span class="sd">    :type lag_days_after: int</span>
+
+<span class="sd">    :param tup_header: Name of TUP column to be added in input data</span>
+<span class="sd">    :type tup_header: str</span>
+
+<span class="sd">    :param subject_header: Participant header in input data</span>
+<span class="sd">    :type subject_header: str</span>
+
+<span class="sd">    :param time_header: Time header in input data</span>
+<span class="sd">    :type time_header: str</span>
+
+<span class="sd">    :return: Input Dataframe with column TUP</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tup_dates</span> <span class="o">=</span> <span class="n">tup_dates</span><span class="p">[</span><span class="n">tup_dates</span><span class="o">.</span><span class="n">subject_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">subject_header</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())]</span>
+    <span class="n">tup_dates</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;subject_id&quot;</span><span class="p">:</span> <span class="n">subject_header</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">])</span>
+
+    <span class="n">merged_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">tup_dates</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">suffixes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;_y&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">tup_dates_header</span> <span class="o">=</span> <span class="s2">&quot;tup_y&quot;</span> <span class="k">if</span> <span class="s2">&quot;tup_y&quot;</span> <span class="ow">in</span> <span class="n">merged_data</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="s2">&quot;tup&quot;</span>
+    <span class="n">start_header</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;start_date_y&quot;</span> <span class="k">if</span> <span class="s2">&quot;start_date_y&quot;</span> <span class="ow">in</span> <span class="n">merged_data</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="s2">&quot;start_date&quot;</span>
+    <span class="p">)</span>
+    <span class="n">stop_header</span> <span class="o">=</span> <span class="s2">&quot;stop_date_y&quot;</span> <span class="k">if</span> <span class="s2">&quot;stop_date_y&quot;</span> <span class="ow">in</span> <span class="n">merged_data</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="s2">&quot;stop_date&quot;</span>
+
+    <span class="c1"># mapping between input dataset and tup dates</span>
+    <span class="n">merged_data</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">merged_data</span><span class="p">[</span>
+            <span class="p">(</span>
+                <span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span>
+                <span class="o">&gt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">start_header</span><span class="p">]</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">lag_days_before</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span>
+                <span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span>
+                <span class="o">&lt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">stop_header</span><span class="p">]</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">lag_days_after</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># if 2 tups almost intercept - keep the closest one</span>
+    <span class="n">merged_data</span><span class="p">[</span><span class="s2">&quot;in_tup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">start_header</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span>
+        <span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">stop_header</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">merged_data</span> <span class="o">=</span> <span class="n">merged_data</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+        <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="n">subject_header</span><span class="p">,</span> <span class="n">time_header</span><span class="p">,</span> <span class="s2">&quot;in_tup&quot;</span><span class="p">,</span> <span class="n">start_header</span><span class="p">],</span>
+        <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">merged_data</span> <span class="o">=</span> <span class="n">merged_data</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;first&quot;</span><span class="p">)</span>
+
+    <span class="c1"># add tup column to input dataset</span>
+    <span class="n">data_with_tup</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">merged_data</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="n">data_with_tup</span><span class="p">[</span><span class="n">tup_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_with_tup</span><span class="p">[</span><span class="n">tup_dates_header</span><span class="p">]</span>
+    <span class="n">data_with_tup</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="n">tup_header</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">data_with_tup</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+        <span class="n">columns</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">setdiff1d</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">data_with_tup</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="n">tup_header</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data_with_tup</span></div>
+
+
+
+<div class="viewcode-block" id="add_tup_day">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.add_tup_day">[docs]</a>
+<span class="k">def</span> <span class="nf">add_tup_day</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">tup_dates</span><span class="p">,</span>
+    <span class="n">tup_header</span><span class="o">=</span><span class="s2">&quot;tup&quot;</span><span class="p">,</span>
+    <span class="n">subject_header</span><span class="o">=</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span>
+    <span class="n">time_header</span><span class="o">=</span><span class="s2">&quot;Time&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a column with the day number within the TUP.</span>
+
+<span class="sd">    :param data: Input DataFrame to add the tup_day column to.</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :param tup_dates: DataFrame with the start and stop dates of each patients tups.</span>
+<span class="sd">    :type tup_dates: pandas.DataFrame</span>
+
+<span class="sd">    :param tup_header:  Name of the TUP column. Default is &quot;tup&quot;.</span>
+<span class="sd">    :type tup_dates: str, optional</span>
+
+<span class="sd">    :param subject_header: Name of the subject ID column. Default is &quot;subject_id&quot;.</span>
+<span class="sd">    :type subject_header: str, optional</span>
+
+<span class="sd">    :param time_header: Name of the time column. Default is &quot;Time&quot;.</span>
+<span class="sd">    :type time_header: str, optional</span>
+
+<span class="sd">    :return: Input DataFrame with column tup_day</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tup_dates</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="n">subject_header</span><span class="p">,</span> <span class="n">tup_header</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tup_day&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">])</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">,</span> <span class="s2">&quot;stop_date&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_version_id">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.get_version_id">[docs]</a>
+<span class="k">def</span> <span class="nf">get_version_id</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get version ID corresponding to a version tag.</span>
+
+<span class="sd">    :param version: Version tag corresponding to the version_id we want to find. Default is None : the version_id returned is also None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :return: The corresponding version_id if version is not None.</span>
+<span class="sd">    :rtype: str, optional</span>
+
+<span class="sd">    :raises ValueError: If the version does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">study_versions</span> <span class="o">=</span> <span class="n">list_study_versions</span><span class="p">(</span><span class="n">study_id</span><span class="p">)</span>
+        <span class="n">version_id</span> <span class="o">=</span> <span class="n">study_versions</span><span class="p">[</span><span class="n">study_versions</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">version</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">version_id</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid version: </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">. Must be one of </span><span class="si">{</span><span class="n">study_versions</span><span class="o">.</span><span class="n">tag</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">version_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">version_id</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">version_id</span></div>
+
+
+
+<div class="viewcode-block" id="check_cohorts">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_cohorts">[docs]</a>
+<span class="k">def</span> <span class="nf">check_cohorts</span><span class="p">(</span><span class="n">cohorts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the cohorts are valid. Each must be one of [&quot;HV&quot;, &quot;PD&quot;, &quot;HD&quot;, &quot;IBD&quot;, &quot;SLE&quot;, &quot;PSS&quot;, &quot;RA&quot;].</span>
+
+<span class="sd">    :param cohorts: Cohorts to check.</span>
+<span class="sd">    :type cohorts: List of str</span>
+
+<span class="sd">    :return: The cohorts list.</span>
+
+<span class="sd">    :raises ValueError: If cohorts is not a list of string or if there is an invalid cohort in the list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_cohorts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;HV&quot;</span><span class="p">,</span> <span class="s2">&quot;PD&quot;</span><span class="p">,</span> <span class="s2">&quot;HD&quot;</span><span class="p">,</span> <span class="s2">&quot;IBD&quot;</span><span class="p">,</span> <span class="s2">&quot;SLE&quot;</span><span class="p">,</span> <span class="s2">&quot;PSS&quot;</span><span class="p">,</span> <span class="s2">&quot;RA&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">cohorts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cohorts</span> <span class="o">=</span> <span class="n">valid_cohorts</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cohorts</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">cohorts</span> <span class="o">=</span> <span class="p">[</span><span class="n">cohorts</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cohorts</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;cohorts&#39; must be a list of string.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">c</span> <span class="ow">in</span> <span class="n">valid_cohorts</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cohorts</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid &#39;cohorts&#39;. Cohorts must be in </span><span class="si">{</span><span class="n">valid_cohorts</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cohorts</span></div>
+
+
+
+<div class="viewcode-block" id="get_valid_devices">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.get_valid_devices">[docs]</a>
+<span class="k">def</span> <span class="nf">get_valid_devices</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get all valid device types.</span>
+
+<span class="sd">    :return: The list of valid device types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_device_types</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;SLP_night&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;STS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;HRV&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;VIT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;GVA&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MCR_MCR&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MCR_MCL&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;COG_pvt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;COG_dst&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">valid_device_types</span></div>
+
+
+
+<div class="viewcode-block" id="get_device_measures">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.get_device_measures">[docs]</a>
+<span class="k">def</span> <span class="nf">get_device_measures</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves the device measures from a given dataset.</span>
+
+<span class="sd">    :param data: The input DataFrame containing device data, where the column names represent various device measures.</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :return: A list of column names from the input DataFrame that correspond to device measures.</span>
+<span class="sd">    :rtype: list</span>
+
+<span class="sd">    :note: The matching is case-insensitive and uses the starting substring match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">valid_device_types</span> <span class="o">=</span> <span class="n">get_valid_devices</span><span class="p">()</span>
+    <span class="n">measures_code</span> <span class="o">=</span> <span class="p">[</span><span class="n">dd</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">valid_device_types</span> <span class="k">for</span> <span class="n">dd</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)]</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">c</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">tuple</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">measures_code</span><span class="p">]))</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">measures</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_device">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_device">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the device_type is among valid device types.</span>
+
+<span class="sd">    :param device_type: Device type to check.</span>
+<span class="sd">    :type device_type: str</span>
+
+<span class="sd">    :return: Device type if it is valid.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises ValueError: If the device type is not among valid device types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_device_types</span> <span class="o">=</span> <span class="n">get_valid_devices</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">device_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_device_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid device type: </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2">. Must be one of </span><span class="si">{</span><span class="n">valid_device_types</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">device_type</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_adam">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_adam">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_adam</span><span class="p">(</span><span class="n">data_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the device_type is among valid device types.</span>
+
+<span class="sd">    :param data_type: adam dataset type to check.</span>
+<span class="sd">    :type data_type: str</span>
+
+<span class="sd">    :return: data type if it is valid.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises ValueError: If the data type is not among valid data types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADPRO&quot;</span><span class="p">,</span> <span class="s2">&quot;ADCL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADDI&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">data_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid data type: </span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">. Must be one of </span><span class="si">{</span><span class="n">valid_types</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data_type</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_devices">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_devices">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_devices</span><span class="p">(</span><span class="n">device_types</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if all device_types are among valid device types.</span>
+
+<span class="sd">    :param device_types: Device types to check.</span>
+<span class="sd">    :type device_type: str or list of str</span>
+
+<span class="sd">    :return: Device types if they are valid.</span>
+<span class="sd">    :rtype: list</span>
+
+<span class="sd">    :raises ValueError: If device_types is not a string or a list of string, and if there is an invalid device type in device_types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_device_types</span> <span class="o">=</span> <span class="n">get_valid_devices</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_types</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">device_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">device_types</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_types</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;device_types&#39; must be a list of string.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">d</span> <span class="ow">in</span> <span class="n">valid_device_types</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">device_types</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid &#39;device_types&#39;. Devices must be in </span><span class="si">{</span><span class="n">valid_device_types</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">device_types</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if dataset is either &#39;ias&#39; or &#39;eas&#39;.</span>
+
+<span class="sd">    :param dataset: Parameter to check. Must be either &#39;ias&#39; or &#39;eas&#39;.</span>
+<span class="sd">    :type dataset: str</span>
+
+<span class="sd">    :return: dataset if no error was raised.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises ValueError: If dataset is neither &#39;ias&#39; nor &#39;eas&#39; or (temporary) if dataset is &#39;eas&#39; (forbidden access).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ias&quot;</span><span class="p">,</span> <span class="s2">&quot;eas&quot;</span><span class="p">]</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;isa&quot;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="s2">&quot;ias&quot;</span>
+
+    <span class="k">if</span> <span class="n">dataset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_datasets</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid &#39;dataset&#39;. Dataset must be in </span><span class="si">{</span><span class="n">valid_datasets</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;eas&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Forbidden access&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_ias_dataset">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_ias_dataset">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_ias_dataset</span><span class="p">(</span><span class="n">ias_dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if ias_dataset is either &#39;Train&#39;, &#39;Test&#39; or &#39;all&#39;.</span>
+
+<span class="sd">    :param ias_dataset: Parameter to check. Must be either &#39;Train&#39;, &#39;Test&#39; or &#39;all&#39;.</span>
+<span class="sd">    :type ias_dataset: str</span>
+
+<span class="sd">    :return: ias_dataset if no error was raised.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises ValueError: If ias_dataset is not in [&#39;Train&#39;, &#39;Test&#39;, &#39;all&#39;].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_ias_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ias_dataset</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_ias_datasets</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid &#39;ias_dataset&#39;. Must be in </span><span class="si">{</span><span class="n">valid_ias_datasets</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ias_dataset</span></div>
+
+
+
+<div class="viewcode-block" id="check_participants">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_participants">[docs]</a>
+<span class="k">def</span> <span class="nf">check_participants</span><span class="p">(</span><span class="n">participants</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the participants is in the right format.</span>
+
+<span class="sd">    :param participants: Parameter to check.</span>
+<span class="sd">    :type participants: str, list of str or None.</span>
+
+<span class="sd">    :return: None if participants is None, and a list of participants if the format is correct.</span>
+<span class="sd">    :rtype: list of str or None</span>
+
+<span class="sd">    :raises ValueError: If participants is not a string, a list of string or None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">participants</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">participants</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">participants</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">participants</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">participants</span> <span class="o">=</span> <span class="n">participants</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">participants</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">participants</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">participants</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;Participants must be a either a string, a list of string or None.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_valid_type">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.utils.check_valid_type">[docs]</a>
+<span class="k">def</span> <span class="nf">check_valid_type</span><span class="p">(</span><span class="n">data_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if data_type parameter is among valid data types: </span>
+
+<span class="sd">    Valid data types:</span>
+<span class="sd">    [&quot;ADDI&quot;, &quot;ADSL&quot;, &quot;ADCL&quot;, &quot;ADPRO&quot;, &quot;SLP_night&quot;, &quot;STS&quot;, &quot;HRV&quot;, </span>
+<span class="sd">    &quot;VIT&quot;, &quot;GVA&quot;, &quot;MCR_MCR&quot;, &quot;MCR_MCL&quot;, &quot;COG_pvt&quot;, &quot;COG_dst&quot;]</span>
+
+<span class="sd">    :param data_type: The data type to check.</span>
+<span class="sd">    :type data_type: str</span>
+
+<span class="sd">    :raises ValueError: If the data_type is not valid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_devices</span> <span class="o">=</span> <span class="n">get_valid_devices</span><span class="p">()</span>
+    <span class="n">valid_types</span> <span class="o">=</span> <span class="n">valid_devices</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;ADDI&quot;</span><span class="p">,</span> <span class="s2">&quot;ADSL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADCL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADPRO&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">data_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">valid_types</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid data_type. Must be one of </span><span class="si">{</span><span class="n">valid_types</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data_type</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.dataset_manager.adam_dataset &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.dataset_manager.adam_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.dataset_manager.adam_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">dmpy</span>
+
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">study_id</span>
+
+
+<div class="viewcode-block" id="fetch_adam_data">
+<a class="viewcode-back" href="../../../cosanalysis.html#cosanalysis.dataset_manager.adam_dataset.fetch_adam_data">[docs]</a>
+<span class="k">def</span> <span class="nf">fetch_adam_data</span><span class="p">(</span><span class="n">datasets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADPRO&quot;</span><span class="p">,</span> <span class="s2">&quot;ADCL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADDI&quot;</span><span class="p">],</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_set</span><span class="o">=</span><span class="s2">&quot;ISA&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetch ADAM datasets from the DMP using the dmpy function fetch_adam_data.</span>
+<span class="sd">    ADSL: Demographics data and TUP dates</span>
+<span class="sd">    ADPRO: Weekly PROs</span>
+<span class="sd">    ADCL: Clinical scores</span>
+<span class="sd">    ADDI: Diary data</span>
+
+<span class="sd">    :param datasets: Type of datasets we want to load. Must be among &quot;ADSL&quot;, &quot;ADPRO&quot;, &quot;ADCL&quot; and &quot;ADDI&quot;.</span>
+<span class="sd">    :type datasets: str or list of str</span>
+
+<span class="sd">    :param version: Version of the data to load. Default is None.</span>
+<span class="sd">    :type version: str, optional</span>
+
+<span class="sd">    :param analysis_set: Either ISA or ESA (identification or evaluation dataset). Default is ISA.</span>
+<span class="sd">    :type analysis_set: str, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">analysis_set</span> <span class="o">=</span> <span class="n">analysis_set</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">analysis_set</span> <span class="o">==</span> <span class="s2">&quot;IAS&quot;</span><span class="p">:</span>
+        <span class="n">analysis_set</span> <span class="o">=</span> <span class="s2">&quot;ISA&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">datasets</span><span class="p">]</span>
+
+    <span class="n">valid_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ADSL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADPRO&quot;</span><span class="p">,</span> <span class="s2">&quot;ADCL&quot;</span><span class="p">,</span> <span class="s2">&quot;ADDI&quot;</span><span class="p">]</span>
+    <span class="n">invalid_datasets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">setdiff1d</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">valid_datasets</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalid_datasets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;Invalid argument &#39;dataset&#39;. </span>
+<span class="s2">                        It must be a list included in </span><span class="si">{</span><span class="n">valid_datasets</span><span class="si">}</span><span class="s2">.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">adam_datasets</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Fetch datasets</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetch ADSL dataset......&quot;</span><span class="p">)</span>
+    <span class="n">adsl_data</span> <span class="o">=</span> <span class="n">dmpy</span><span class="o">.</span><span class="n">fetch_adam_data</span><span class="p">(</span>
+        <span class="n">study_id</span><span class="p">,</span> <span class="s1">&#39;ADSL&#39;</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span>    <span class="c1"># demographics</span>
+    <span class="n">adsl_data</span> <span class="o">=</span> <span class="n">adsl_data</span><span class="p">[</span><span class="n">adsl_data</span><span class="o">.</span><span class="n">ANALYSISSET</span> <span class="o">==</span> <span class="n">analysis_set</span><span class="p">]</span>
+
+    <span class="c1"># Fix invalid tup_dates</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">version_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">versions</span> <span class="o">=</span> <span class="n">dmpy</span><span class="o">.</span><span class="n">list_study_versions</span><span class="p">(</span><span class="n">study_id</span><span class="p">)</span>
+        <span class="n">version_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+            <span class="n">versions</span><span class="p">[</span><span class="n">versions</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">version</span><span class="p">]</span><span class="o">.</span><span class="n">created</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+
+    <span class="n">adsl_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">TUP1DT</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;=</span> <span class="n">version_date</span><span class="p">,</span> <span class="s2">&quot;TUP1DT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+    <span class="n">adsl_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">TUP2DT</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;=</span> <span class="n">version_date</span><span class="p">,</span> <span class="s2">&quot;TUP2DT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+    <span class="n">adsl_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">TUP3DT</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;=</span> <span class="n">version_date</span><span class="p">,</span> <span class="s2">&quot;TUP3DT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+    <span class="n">adsl_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">TUP4DT</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;=</span> <span class="n">version_date</span><span class="p">,</span> <span class="s2">&quot;TUP4DT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+
+    <span class="k">if</span> <span class="s2">&quot;ADSL&quot;</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">adsl_data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">adam_datasets</span><span class="p">[</span><span class="s2">&quot;ADSL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adsl_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">datasets</span> <span class="k">if</span> <span class="n">d</span> <span class="o">!=</span> <span class="s2">&quot;ADSL&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fetch </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2"> dataset......&quot;</span><span class="p">)</span>
+        <span class="c1"># Fetch dataset from the DMP</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dmpy</span><span class="o">.</span><span class="n">fetch_adam_data</span><span class="p">(</span><span class="n">study_id</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span>
+        <span class="c1"># Keep only IAS data</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">ANALYSISSET</span> <span class="o">==</span> <span class="n">analysis_set</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Add COHORT column</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">adsl_data</span><span class="p">[[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;COHORT&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+        <span class="c1"># To numeric</span>
+        <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;AVAL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">AVAL</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;USUBJID&quot;</span><span class="p">,</span> <span class="s2">&quot;AVISIT&quot;</span><span class="p">,</span> <span class="s2">&quot;ADT&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">adam_datasets</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">adam_datasets</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

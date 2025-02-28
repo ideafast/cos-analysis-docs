@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction to COS-analysis package &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Demonstration" href="DEMO.html" />
+    <link rel="prev" title="COS-analysis Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to COS-analysis package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#get-started">Get started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#main-functionalities">Main functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#available-data-types">Available Data Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction to COS-analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction-to-cos-analysis-package">
+<h1>Introduction to COS-analysis package<a class="headerlink" href="#introduction-to-cos-analysis-package" title="Link to this heading"></a></h1>
+<p><strong>COS-analysis</strong> is a Python package developed to standardize the data loading and preprocessing. It aims to enhance data quality, reduce inconsistencies, and streamline the process of data preparation for analysis.</p>
+<section id="get-started">
+<h2>Get started<a class="headerlink" href="#get-started" title="Link to this heading"></a></h2>
+<p>The COS Analysis Package is built on the dmpy API, which has been developed by Imperial College London to facilitate access to data.</p>
+<p><strong>Installation and usage:</strong></p>
+<p>The COS Analysis Package is pre-installed on the Analytical Environment. The primary objective is to run analyses directly within this environment, ensuring seamless integration with existing data sources and computational resources.</p>
+</section>
+<section id="main-functionalities">
+<h2>Main functionalities<a class="headerlink" href="#main-functionalities" title="Link to this heading"></a></h2>
+<p>This package provides functionality to:</p>
+<ul class="simple">
+<li><p>Read, concatenate, clean, and save device datasets on the DMP.</p></li>
+<li><p>Read and clean diary data by choosing a specific concept of interest (e.g.,fatigue, daytime sleepiness, or sleep quality), applying a defined window size, and deciding whether to consider changes from baseline.</p></li>
+<li><p>Combine and aggregate device and diary datasets, incorporating the covariates specified in the SAP, with the option to filter by cohort.</p></li>
+<li><p>Preprocess the dataset to prepare it for analysis.</p></li>
+<li><p>Upload a model to the DMP.</p></li>
+<li><p>Run inferences on pre-saved models.</p></li>
+</ul>
+</section>
+<section id="available-data-types">
+<h2>Available Data Types<a class="headerlink" href="#available-data-types" title="Link to this heading"></a></h2>
+<p><strong>Feature data</strong></p>
+<ul class="simple">
+<li><p>“SLP_night” - Sleep features over the night (derived from BED sensor)</p></li>
+<li><p>“HRV” - Heart Rate Variability - 5minutes (derived from VTP)</p></li>
+<li><p>“VIT” - Vital Signs - 1minute (derived from VTP)</p></li>
+<li><p>(“GVA” - Gait Variability - 24h / daily)</p></li>
+<li><p>“MCR_MCR” - Activity features 1 - 1minute (derived from AX6)</p></li>
+<li><p>“MCR_MCL” - Activity features 2 - 1minute (derived from AX6)</p></li>
+<li><p>“STS” - Sit To Stand transitions - Events (derived from AX6)</p></li>
+<li><p>“COG_pvt” - Cognitive test 1 every morning (derived from CANTAB App)</p></li>
+<li><p>“COG_dst” - Cognitive test 2 every evening (derived from CANTAB App)</p></li>
+</ul>
+<p><a class="reference external" href="https://newcastle.sharepoint.com/:b:/r/sites/idea-fast/Shared%20Documents/Work%20Packages/WP7%20Statistical%20Inference,%20Design%20and%20Learning/Deliverables/D7.3/IDEA-FAST_D7.3_AI-Methods-Toolbox_v1.0-merged.pdf?csf=1&amp;amp;web=1&amp;amp;e=aJwdfM">See full list of features in D7.3</a></p>
+<p><a class="reference external" href="https://newcastle.sharepoint.com/:x:/r/sites/idea-fast/_layouts/15/Doc.aspx?sourcedoc=%7B0D52C3F4-CE5B-4FDC-8EAB-2FF2FFB9BF2E%7D&amp;amp;file=COS_Standardized_Feature_Data_Format.xlsx&amp;amp;action=default&amp;amp;mobileredirect=true">See dataset format</a></p>
+<p><strong>ADAM dataset data</strong></p>
+<ul class="simple">
+<li><p>Demographics from ADSL: COHORT, AGE, GENDER, BMI, TIMESINCEDIAG.</p></li>
+<li><p>PROs from ADPRO : FACITF-SCORE, SLPD4, KSS, fVAS, sqVAS.</p></li>
+<li><p>Baseline of PROs from ADPRO (value at the start of the first TUP): FACITF-SCORE_baseline_7days, KSS_baseline_7days, SLPD4_baseline_7days.</p></li>
+<li><p>Clinical data from ADCL: Disease score.</p></li>
+<li><p>Diaries from ADDI: Answers to questionnaires recorded three times a day - overall_fatigue_vas, physical_fatigue_vas, mental_fatigue_vas, sleep_quality_vas, KSS.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="COS-analysis Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DEMO.html" class="btn btn-neutral float-right" title="Demonstration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

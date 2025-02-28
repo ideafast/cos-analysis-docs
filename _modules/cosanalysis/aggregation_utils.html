@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.aggregation_utils &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.aggregation_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.aggregation_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pandas.tseries.frequencies</span> <span class="kn">import</span> <span class="n">to_offset</span>
+
+
+<div class="viewcode-block" id="aggregate_periodic_data">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.aggregate_periodic_data">[docs]</a>
+<span class="k">def</span> <span class="nf">aggregate_periodic_data</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">time_header</span><span class="p">,</span>
+    <span class="n">window_start_header</span><span class="p">,</span>
+    <span class="n">window_stop_header</span><span class="p">,</span>
+    <span class="n">categorical_columns</span><span class="p">,</span>
+    <span class="n">continuous_columns</span><span class="p">,</span>
+    <span class="n">period</span><span class="o">=</span><span class="s2">&quot;D&quot;</span><span class="p">,</span>
+    <span class="n">freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">thresh</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span>
+    <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">origin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">statistics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">additional_functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate dataset by period.</span>
+
+<span class="sd">    This function aggregates data into specified periods, such as daily, weekly, etc.,</span>
+<span class="sd">    and computes statistical functions on both categorical and continuous columns.</span>
+
+<span class="sd">    offset, period, and origin defined here:</span>
+<span class="sd">    https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases</span>
+
+<span class="sd">    :param data: Input DataFrame to be aggregated.</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :param time_header: Name of the column containing the time values.</span>
+<span class="sd">    :type time_header: str</span>
+
+<span class="sd">    :param window_start_header: Name of the column where the start time of the window will be stored.</span>
+<span class="sd">    :type window_start_header: str</span>
+
+<span class="sd">    :param window_stop_header: Name of the column where the stop time of the window will be stored.</span>
+<span class="sd">    :type window_stop_header: str</span>
+
+<span class="sd">    :param categorical_columns: List of column names representing categorical data for aggregation.</span>
+<span class="sd">    :type categorical_columns: list of str</span>
+
+<span class="sd">    :param continuous_columns: List of column names representing continuous data for aggregation.</span>
+<span class="sd">    :type categorical_columns: list of str</span>
+
+<span class="sd">    :param period: The period for aggregation (e.g., &quot;D&quot; for day, &quot;W&quot; for week, etc.). Default is &quot;D&quot;.</span>
+<span class="sd">    :type period: str</span>
+
+<span class="sd">    :param freq: Frequency of data, used to filter groups based on coverage. Default is None.</span>
+<span class="sd">    :type freq: float, optional</span>
+
+<span class="sd">    :param thresh: Proportion of non-missing values required for aggregation to occur in each group. Default is 0.75.</span>
+<span class="sd">    :type thresh: float, optional</span>
+
+<span class="sd">    :param offset: Offset to be applied to the period (e.g., &quot;+1D&quot;).</span>
+<span class="sd">    :type offset: str, optional</span>
+
+<span class="sd">    :param origin: The reference date for the aggregation (e.g., &#39;start&#39;, &#39;epoch&#39;).</span>
+<span class="sd">    :type origin: str, optional</span>
+
+<span class="sd">    :param by: Column or columns by which to group the data.</span>
+<span class="sd">    :type by: str or list of str, optional</span>
+
+<span class="sd">    :param statistics: List of statistical functions to apply (e.g., &quot;mean&quot;, &quot;std&quot;).</span>
+<span class="sd">    :type statistics: list of str, optional</span>
+
+<span class="sd">    :param additional_functions: Dictionary of custom functions to apply to specific columns.</span>
+<span class="sd">    :type additional_functions: dict, optional</span>
+
+<span class="sd">    :return: Aggregated DataFrame with statistical summaries for each group.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">additional_functions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">additional_functions</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">by</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">by</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[</span><span class="n">by</span><span class="p">]</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">])</span>
+
+    <span class="n">grouper</span> <span class="o">=</span> <span class="n">by</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Grouper</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">time_header</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">period</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="c1"># filter groups based on coverage</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">period_seconds</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">to_offset</span><span class="p">(</span><span class="n">period</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="n">max_nb_values</span> <span class="o">=</span> <span class="n">period_seconds</span> <span class="o">*</span> <span class="n">freq</span>
+
+        <span class="n">threshold_value</span> <span class="o">=</span> <span class="n">thresh</span> <span class="o">*</span> <span class="n">max_nb_values</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">threshold_value</span><span class="p">)</span>
+
+    <span class="c1"># aggregate data</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span>
+    <span class="n">data_agg</span> <span class="o">=</span> <span class="n">aggregate_data</span><span class="p">(</span>
+        <span class="n">group</span><span class="p">,</span>
+        <span class="n">categorical_columns</span><span class="p">,</span>
+        <span class="n">continuous_columns</span><span class="p">,</span>
+        <span class="n">stats</span><span class="o">=</span><span class="n">statistics</span><span class="p">,</span>
+        <span class="n">custom_functions</span><span class="o">=</span><span class="n">additional_functions</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add start and stop window columns</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">window_start_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_agg</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">window_stop_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_agg</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+        <span class="n">data_agg</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">time_header</span><span class="p">:</span> <span class="n">window_start_header</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">data_agg</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">by</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">window_stop_header</span><span class="p">,</span>
+            <span class="n">data_agg</span><span class="p">[</span><span class="n">window_start_header</span><span class="p">]</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">period</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_agg</span></div>
+
+
+
+<div class="viewcode-block" id="aggregate_windowed_data">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.aggregate_windowed_data">[docs]</a>
+<span class="k">def</span> <span class="nf">aggregate_windowed_data</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">time_header</span><span class="p">,</span>
+    <span class="n">df_windows</span><span class="p">,</span>
+    <span class="n">window_start_header</span><span class="p">,</span>
+    <span class="n">window_stop_header</span><span class="p">,</span>
+    <span class="n">categorical_columns</span><span class="p">,</span>
+    <span class="n">continuous_columns</span><span class="p">,</span>
+    <span class="n">freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">thresh</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span>
+    <span class="n">by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">statistics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">additional_functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate dataset by windows defined in df_windows DataFrame.</span>
+
+<span class="sd">    This function aggregates the data based on predefined start and stop windows from the df_windows DataFrame.</span>
+
+<span class="sd">    :param data: Input DataFrame containing the data to be aggregated.</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :param time_header: Name of the column containing the time values.</span>
+<span class="sd">    :type time_header: str</span>
+
+<span class="sd">    :param df_windows: DataFrame containing the predefined windows with start and stop times for aggregation.</span>
+<span class="sd">    :type df_windows: pandas.DataFrame</span>
+
+<span class="sd">    :param window_start_header: Name of the column containing the start time of the window.</span>
+<span class="sd">    :type window_start_header: str</span>
+
+<span class="sd">    :param window_stop_header: Name of the column containing the stop time of the window.</span>
+<span class="sd">    :type window_stop_header: str</span>
+
+
+<span class="sd">    :param categorical_columns: List of categorical columns for which statistical functions are applied.</span>
+<span class="sd">    :type categorical_columns: list of str</span>
+
+<span class="sd">    :param continuous_columns: List of continuous columns for which statistical functions are applied.</span>
+<span class="sd">    :type continuous_columns: list of str</span>
+
+<span class="sd">    :param freq: Frequency of data, used to filter out groups that don&#39;t meet the coverage threshold.</span>
+<span class="sd">    :type freq: float, optional</span>
+
+<span class="sd">    :param thresh: Proportion of non-missing values required for aggregation to occur in each group. Default is 0.75.</span>
+<span class="sd">    :type thresh: float, optional</span>
+
+<span class="sd">    :param by: Columns by which to group the data (e.g., &quot;subject_id&quot;).</span>
+<span class="sd">    :type by: str or list of str, optional</span>
+
+<span class="sd">    :param statistics: List of statistical functions to apply (e.g., &quot;mean&quot;, &quot;std&quot;).</span>
+<span class="sd">    :type statistics: list of str, optional</span>
+
+<span class="sd">    :param additional_functions: Dictionary of additional custom aggregation functions to apply.</span>
+<span class="sd">    :type additional_functions: dict, optional</span>
+
+<span class="sd">    :return: Aggregated DataFrame with statistical summaries for each window.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">additional_functions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">additional_functions</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">by</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">by</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[</span><span class="n">by</span><span class="p">]</span>
+
+    <span class="c1"># get windowed data</span>
+    <span class="n">data_windowed</span> <span class="o">=</span> <span class="n">get_aggregation_windows</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">time_header</span><span class="p">,</span> <span class="n">df_windows</span><span class="p">,</span> <span class="n">window_start_header</span><span class="p">,</span> <span class="n">window_stop_header</span><span class="p">,</span> <span class="n">by</span><span class="o">=</span><span class="n">by</span>
+    <span class="p">)</span>
+
+    <span class="n">grouper</span> <span class="o">=</span> <span class="n">by</span> <span class="o">+</span> <span class="p">[</span><span class="n">window_start_header</span><span class="p">,</span> <span class="n">window_stop_header</span><span class="p">]</span>
+
+    <span class="c1"># filter groups based on coverage</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">window_seconds</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">data_windowed</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">window_stop_header</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">data_windowed</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">window_start_header</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="n">max_nb_values</span> <span class="o">=</span> <span class="n">window_seconds</span> <span class="o">*</span> <span class="n">freq</span>
+
+        <span class="n">threshold_value</span> <span class="o">=</span> <span class="n">thresh</span> <span class="o">*</span> <span class="n">max_nb_values</span>
+        <span class="n">data_windowed</span> <span class="o">=</span> <span class="n">data_windowed</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">threshold_value</span>
+        <span class="p">)</span>
+
+    <span class="c1"># aggregate data</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">data_windowed</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span>
+    <span class="n">data_agg</span> <span class="o">=</span> <span class="n">aggregate_data</span><span class="p">(</span>
+        <span class="n">group</span><span class="p">,</span>
+        <span class="n">categorical_columns</span><span class="p">,</span>
+        <span class="n">continuous_columns</span><span class="p">,</span>
+        <span class="n">stats</span><span class="o">=</span><span class="n">statistics</span><span class="p">,</span>
+        <span class="n">custom_functions</span><span class="o">=</span><span class="n">additional_functions</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_agg</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_aggregation_windows">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.get_aggregation_windows">[docs]</a>
+<span class="k">def</span> <span class="nf">get_aggregation_windows</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">time_header</span><span class="p">,</span>
+    <span class="n">df_times</span><span class="p">,</span>
+    <span class="n">start_header</span><span class="p">,</span>
+    <span class="n">stop_header</span><span class="p">,</span>
+    <span class="n">by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map dataset times to start and stop times defined in df_times.</span>
+
+<span class="sd">    This function assigns each row in the data to a specific window defined by the start and stop times from the df_times DataFrame.</span>
+
+<span class="sd">    :param data: Input DataFrame to be aggregated.</span>
+<span class="sd">    :type data: pandas.DataFrame</span>
+
+<span class="sd">    :param time_header: Name of the column containing the time values in the data.</span>
+<span class="sd">    :type time_header: str</span>
+
+<span class="sd">    :param df_times: DataFrame containing the windows with start and stop times.</span>
+<span class="sd">    :type df_times: pandas.DataFrame</span>
+
+<span class="sd">    :param start_header: Name of the column containing the start time of the window.</span>
+<span class="sd">    :type start_header: str</span>
+
+<span class="sd">    :param stop_header: Name of the column containing the stop time of the window.</span>
+<span class="sd">    :type stop_header: str</span>
+
+<span class="sd">    :param by: Columns by which to group the data (e.g., &quot;subject_id&quot;).</span>
+<span class="sd">    :type by: list of str, optional</span>
+
+<span class="sd">    :return: DataFrame where each row is assigned to a window based on the time it falls into.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If the input DataFrames don&#39;t contain the required columns, or if the datetime columns don&#39;t share the same timezones.</span>
+<span class="sd">    :raises RuntimeError: If get_aggregation_windows is not properly executed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">time_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data must contain a column </span><span class="si">{</span><span class="n">time_header</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">start_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df_times</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;df_times must contain a column </span><span class="si">{</span><span class="n">start_header</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stop_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df_times</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;df_times must contain a column </span><span class="si">{</span><span class="n">stop_header</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">by</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df_times</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">by</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">])</span>
+    <span class="n">df_times</span><span class="p">[</span><span class="n">start_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df_times</span><span class="p">[</span><span class="n">start_header</span><span class="p">])</span>
+    <span class="n">df_times</span><span class="p">[</span><span class="n">stop_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df_times</span><span class="p">[</span><span class="n">stop_header</span><span class="p">])</span>
+
+    <span class="n">df_times</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">start_header</span><span class="p">,</span> <span class="n">stop_header</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">timezones</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz</span><span class="p">,</span>
+        <span class="n">df_times</span><span class="p">[</span><span class="n">start_header</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz</span><span class="p">,</span>
+        <span class="n">df_times</span><span class="p">[</span><span class="n">stop_header</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">timezones</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;columns </span><span class="si">{</span><span class="n">time_header</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">start_header</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">stop_header</span><span class="si">}</span><span class="s2"> must share the same timezone.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">microseconds</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">merged_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">df_times</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">by</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="n">data_windowed</span> <span class="o">=</span> <span class="n">merged_data</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">start_header</span><span class="p">])</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">merged_data</span><span class="p">[</span><span class="n">time_header</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">merged_data</span><span class="p">[</span><span class="n">stop_header</span><span class="p">]</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">)</span>
+        <span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;get_aggregation_windows was not properly executed&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_windowed</span></div>
+
+
+
+<div class="viewcode-block" id="aggregate_data">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.aggregate_data">[docs]</a>
+<span class="k">def</span> <span class="nf">aggregate_data</span><span class="p">(</span>
+    <span class="n">group</span><span class="p">,</span>
+    <span class="n">categorical_columns</span><span class="p">,</span>
+    <span class="n">continuous_columns</span><span class="p">,</span>
+    <span class="n">stats</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">custom_functions</span><span class="o">=</span><span class="p">{},</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate data by applying statistical functions to categorical and continuous columns.</span>
+
+<span class="sd">    This function computes statistical summaries for continuous and categorical columns in each group.</span>
+
+<span class="sd">    :param group: The grouped DataFrame to aggregate.</span>
+<span class="sd">    :type group: GroupBy object</span>
+
+<span class="sd">    :param categorical_columns: List of categorical columns for which aggregation is to be performed.</span>
+<span class="sd">    :type categorical_columns: list of str</span>
+
+<span class="sd">    :param continuous_columns: List of continuous columns for which aggregation is to be performed.</span>
+<span class="sd">    :type continuous_columns: list of str</span>
+
+<span class="sd">    :param stats: List of statistical functions to apply (e.g., &quot;mean&quot;, &quot;max&quot;).</span>
+<span class="sd">    :type stats: list of str, optional</span>
+
+<span class="sd">    :param custom_functions: Dictionary of custom functions to apply to specific columns.</span>
+<span class="sd">    :type custom_functions: dict, optional</span>
+
+
+<span class="sd">    :return: Aggregated DataFrame containing the computed statistics.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">allowed_continuous_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;var&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;25p&quot;</span><span class="p">,</span> <span class="s2">&quot;50p&quot;</span><span class="p">,</span> <span class="s2">&quot;75p&quot;</span><span class="p">]</span>
+    <span class="n">allowed_categorical_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">continuous_stats</span> <span class="o">=</span> <span class="n">allowed_continuous_stats</span>
+        <span class="n">categorical_stats</span> <span class="o">=</span> <span class="n">allowed_categorical_stats</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">continuous_stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">allowed_continuous_stats</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+        <span class="n">categorical_stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">allowed_categorical_stats</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+
+    <span class="n">data_agg_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">continuous_columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">continuous_stats</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data_agg_</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">group</span><span class="p">[</span><span class="n">continuous_columns</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">get_stats_functions</span><span class="p">(</span><span class="n">continuous_stats</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">data_agg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_agg_</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">categorical_columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">categorical_stats</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data_agg_</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">group</span><span class="p">[</span><span class="n">categorical_columns</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">get_stats_functions</span><span class="p">(</span><span class="n">categorical_stats</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">data_agg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_agg_</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">custom_functions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data_agg_</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">custom_functions</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="n">data_agg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_agg_</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_agg_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="n">data_agg</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">),</span> <span class="n">data_agg_list</span>
+    <span class="p">)</span>
+    <span class="n">data_agg</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">if</span> <span class="n">h</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="k">else</span> <span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">data_agg</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">data_agg</span></div>
+
+
+
+<div class="viewcode-block" id="get_stats_functions">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.get_stats_functions">[docs]</a>
+<span class="k">def</span> <span class="nf">get_stats_functions</span><span class="p">(</span><span class="n">stats</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map statistical function names to the corresponding function implementations.</span>
+
+<span class="sd">    This function returns a list of tuples where each tuple contains a statistical function name</span>
+<span class="sd">    and the corresponding function to apply to the data.</span>
+
+<span class="sd">    :param stats: List of statistical functions to map (e.g., &quot;mean&quot;, &quot;std&quot;).</span>
+<span class="sd">    :type stats: list of str</span>
+
+<span class="sd">    :return: List of tuples, each containing a function name and the corresponding function.</span>
+<span class="sd">    :rtype: list of tuples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">kurtosis</span><span class="p">,</span> <span class="n">skew</span><span class="p">,</span> <span class="n">iqr</span>
+
+    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="s2">&quot;var&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sum&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="mi">2</span><span class="p">))),</span>
+        <span class="s2">&quot;kurtosis&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">kurtosis</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)]),</span>
+        <span class="s2">&quot;skew&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">skew</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)]),</span>
+        <span class="s2">&quot;iqr&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">iqr</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)]),</span>
+        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;10p&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;25p&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="mi">25</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;50p&quot;</span><span class="p">:</span> <span class="s2">&quot;median&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;75p&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="mi">75</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;90p&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="mi">90</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;deviation&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)]),</span>
+        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">x</span><span class="p">)])[</span>
+                <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="n">statistics_</span> <span class="o">=</span> <span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="n">statistics</span><span class="p">[</span><span class="n">s</span><span class="p">])</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">statistics_</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_start_end">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.calculate_start_end">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_start_end</span><span class="p">(</span><span class="n">df_windows</span><span class="p">,</span> <span class="n">window_length</span><span class="p">,</span> <span class="n">setting</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute start and end times based on window length and setting (&#39;before&#39;, &#39;after&#39;, &#39;around&#39;).</span>
+
+<span class="sd">    :param df_windows: DataFrame containing the windows with times.</span>
+<span class="sd">    :type df_windows: pandas.DataFrame</span>
+
+<span class="sd">    :param window_length: Length of the window in hours.</span>
+<span class="sd">    :type window_length: int</span>
+
+<span class="sd">    :param setting: Setting for how the window is defined: &#39;before&#39;, &#39;after&#39;, or &#39;around&#39;.</span>
+<span class="sd">    :type setting: str</span>
+
+<span class="sd">    :return: Start and end times for the windows as Pandas Series.</span>
+<span class="sd">    :rtype: tuple of pandas.Series</span>
+
+<span class="sd">    :raises ValueError: If the setting is not one of &quot;before&quot;, &quot;around&quot;, &quot;after&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">setting</span> <span class="o">==</span> <span class="s2">&quot;before&quot;</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">window_length</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span>
+    <span class="k">elif</span> <span class="n">setting</span> <span class="o">==</span> <span class="s2">&quot;after&quot;</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">window_length</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">setting</span> <span class="o">==</span> <span class="s2">&quot;around&quot;</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">window_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">df_windows</span><span class="o">.</span><span class="n">Time</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">window_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">setting</span><span class="si">}</span><span class="s2"> is not a valid setting. Must be one of &#39;before&#39;, &#39;around&#39;, &#39;after&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span></div>
+
+
+
+<div class="viewcode-block" id="check_period">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.check_period">[docs]</a>
+<span class="k">def</span> <span class="nf">check_period</span><span class="p">(</span><span class="n">period</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validate the given period string.</span>
+
+<span class="sd">    This function checks if the provided period is a valid period specification.</span>
+
+<span class="sd">    :param period: The period string to validate (e.g., &#39;2D&#39;, &#39;1W&#39;, &#39;5h&#39;).</span>
+<span class="sd">    :type period: str</span>
+
+<span class="sd">    :return: The validated period string, potentially with a prepended &#39;1&#39; if only an alias is provided.</span>
+<span class="sd">    :rtype: str</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        If the period is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">valid_periods</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^\d*(?:D|W|h|min)$&quot;</span>
+
+    <span class="n">is_valid</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">valid_periods</span><span class="p">,</span> <span class="n">period</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Invalid period. Accepted units are &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;&#39;D&#39; (calendar day frequency)&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &#39;W&#39; (weekly frequency)&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &#39;h&#39; (hourly frequency)&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &#39;min&#39; (minutly frequency).</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;Examples of periods: &#39;2D&#39;, &#39;7D&#39;, &#39;1W&#39;, &#39;2h&#39;, &#39;30min&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">period</span><span class="o">.</span><span class="n">isalpha</span><span class="p">():</span>
+        <span class="n">period</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;1</span><span class="si">{</span><span class="n">period</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="n">period</span></div>
+
+
+
+<div class="viewcode-block" id="is_daily_period">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.aggregation_utils.is_daily_period">[docs]</a>
+<span class="k">def</span> <span class="nf">is_daily_period</span><span class="p">(</span><span class="n">period</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if the given period represents a daily frequency.</span>
+
+<span class="sd">    :param period: The period string (e.g., &#39;2D&#39;, &#39;1W&#39;).</span>
+<span class="sd">    :type period: str</span>
+
+<span class="sd">    :return: True if the period represents a daily frequency, False otherwise.</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">daily</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">period</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">daily</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

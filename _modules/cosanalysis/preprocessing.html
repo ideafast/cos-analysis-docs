@@ -1,0 +1,244 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cosanalysis.preprocessing &mdash; COS-analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            COS-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../README.html">Introduction to COS-analysis package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DEMO.html">Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cosanalysis.html">Useful functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cosanalysis.html#cosanalysis-package-all-functions">cosanalysis package - all functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../model.html">Model upload requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../model.html#model-folder-example">Model folder example</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">COS-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cosanalysis.preprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cosanalysis.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">zscore</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">MinMaxScaler</span>
+
+
+<div class="viewcode-block" id="processing">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.preprocessing.processing">[docs]</a>
+<span class="k">def</span> <span class="nf">processing</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="s2">&quot;z_score&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Preprocess the given dataset by normalizing the data, encoding categorical variables,</span>
+<span class="sd">    and removing columns with no variability.</span>
+
+<span class="sd">    :param dataset: The input dataframe to be processed. It should contain the device data,</span>
+<span class="sd">                    diary data, and possibly other columns for analysis.</span>
+<span class="sd">    :type dataset: pandas.DataFrame</span>
+
+<span class="sd">    :param normalize: Specifies the normalization method to apply to the numerical columns:</span>
+<span class="sd">                      - &#39;z_score&#39;: Normalize using z-score (standardization).</span>
+<span class="sd">                      - &#39;min_max&#39;: Normalize using Min-Max scaling.</span>
+<span class="sd">                      - None: No normalization applied.</span>
+<span class="sd">                      Default is &#39;z_score&#39;.</span>
+<span class="sd">    :type normalize: {&#39;z_score&#39;, &#39;min_max&#39;, None}, optional</span>
+
+<span class="sd">    :return: A processed dataframe with the specified normalization applied, categorical variables</span>
+<span class="sd">              encoded, and columns with no variability removed.</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+
+<span class="sd">    :raises ValueError: If the `normalize` parameter is not one of [&#39;z_score&#39;, &#39;min_max&#39;, None].</span>
+
+<span class="sd">    :note:</span>
+<span class="sd">        - Non-numeric columns such as `subject_id`, `tup`, `tup_day`, `start_window` and `stop_window` are excluded from normalization.</span>
+<span class="sd">        - Categorical columns are mapped to numeric values (e.g., &#39;GENDER&#39;, &#39;COHORT&#39;) using a predefined</span>
+<span class="sd">          mapping in the `label_mappings` function.</span>
+<span class="sd">        - One-hot encoding is performed on columns starting with certain prefixes, such as</span>
+<span class="sd">          `VIT_PostureCategory_1min`, `mcr_class`, and `mcl_class`.</span>
+<span class="sd">        - Any columns with constant values (no variability) are dropped before returning the result.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c1"># Check the normalize parameter</span>
+    <span class="k">if</span> <span class="n">normalize</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;z_score&quot;</span><span class="p">,</span> <span class="s2">&quot;min_max&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;The parameter &quot;normalize&quot; must be one of [&quot;z_score&quot;, &quot;min_max&quot;, None]&#39;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Label the string columns</span>
+    <span class="c1"># 1 - diaries</span>
+    <span class="n">mappings</span> <span class="o">=</span> <span class="n">label_mappings</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">mappings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">result_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">mappings</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+    <span class="c1"># 2 - device (One Hot Encoding)</span>
+    <span class="n">one_hot_columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;VIT_PostureCategory_1min&quot;</span><span class="p">,</span> <span class="s2">&quot;mcr_class&quot;</span><span class="p">,</span> <span class="s2">&quot;mcl_class&quot;</span><span class="p">]</span>
+    <span class="n">to_encode</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">col</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">one_hot_columns</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">encoded_col</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">to_encode</span> <span class="o">!=</span> <span class="p">[]:</span>
+        <span class="n">result_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">result_df</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">to_encode</span><span class="p">)</span>
+        <span class="n">encoded_col</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+
+    <span class="c1"># Convert numeric columns</span>
+    <span class="n">not_numeric</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;subject_id&quot;</span><span class="p">,</span> <span class="s2">&quot;tup&quot;</span><span class="p">,</span> <span class="s2">&quot;tup_day&quot;</span><span class="p">,</span> <span class="s2">&quot;start_window&quot;</span><span class="p">,</span> <span class="s2">&quot;stop_window&quot;</span><span class="p">]</span>
+    <span class="n">cols_to_convert</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">not_numeric</span><span class="p">]</span>
+    <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_convert</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_convert</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">)</span>
+
+    <span class="c1"># Drop columns with no variability</span>
+    <span class="n">cols_to_drop</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">result_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">result_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">cols_to_drop</span><span class="p">)</span>
+
+    <span class="c1"># Normalize if requested</span>
+    <span class="k">if</span> <span class="n">normalize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cols_to_normalize</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">col</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">result_df</span><span class="o">.</span><span class="n">columns</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">not_numeric</span>
+            <span class="ow">and</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">encoded_col</span>
+            <span class="ow">and</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">mappings</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">]</span>
+        <span class="c1"># we replace NaN values by 0 temporarily - before the imputation is complete</span>
+        <span class="c1"># Save the positions of NaN values</span>
+        <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span>
+        <span class="c1"># Fill NaNs with 0 temporarily for normalization</span>
+        <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;z_score&quot;</span><span class="p">:</span>
+            <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">zscore</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># We will have to save that scaler</span>
+            <span class="n">scaler</span> <span class="o">=</span> <span class="n">MinMaxScaler</span><span class="p">()</span>
+            <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
+                <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Restore NaN values to their original positions</span>
+        <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_df</span><span class="p">[</span><span class="n">cols_to_normalize</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="label_mappings">
+<a class="viewcode-back" href="../../cosanalysis.html#cosanalysis.preprocessing.label_mappings">[docs]</a>
+<span class="k">def</span> <span class="nf">label_mappings</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dictionary of label mappings for various columns, such as `TIMING`, `GENDER`, `COHORT`,</span>
+<span class="sd">    `Season`, and `Day_Type`.</span>
+
+<span class="sd">    :return: A dictionary containing the mappings for each column.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;TIMING&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;E&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;daily&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;GENDER&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Male&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Female&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;COHORT&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;HV&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;PD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;HD&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;PSS&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;IBD&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">&quot;SLE&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="s2">&quot;RA&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>  <span class="c1"># Empty or Unknown</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;Season&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Winter&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Spring&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Summer&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Fall&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+        <span class="s2">&quot;Day_Type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;Weekday&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Weekend&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Let it Care.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
